@@ -3,9 +3,11 @@
 #include <stdio.h>
 #include <assert.h>
 
+typedef int stkelm_t;
 
+//typedef int stkelm_t;
 struct stack_t {
-    int* bffr;
+    stkelm_t* bffr;
     size_t cpty;
     size_t sz;
 };
@@ -96,12 +98,12 @@ void stkdmp(stack_t* Stk) {
     size_t i = 0;
     for (i = 0; i < Stk->sz; i++){
 
-        printf("*[%zu] = %d\n", i, Stk->bffr [i]);
+        printf("*[%zu] = %d\n", i, Stk->bffr [i]); //СДЕЛАТЬ МАКРОСС ДЛЯ ПРИЗВОЛЬНОГО ТИПА
     }
 
     for (; i < Stk->cpty; i++) {
 
-        printf("[%zu] = %d (PZN)\n", i, Stk->bffr [i]);
+        printf("[%zu] = %d (PZN)\n", i, PZN);
     }
 }
 
@@ -146,7 +148,7 @@ int stkgrow(stack_t* Stk) {
 
     assert(Stk != 0);
 
-    Stk->bffr = (int*) realloc(Stk->bffr, 2 * (Stk->cpty) * sizeof((Stk->bffr)[0]));
+    Stk->bffr = (stkelm_t*) realloc(Stk->bffr, 2 * (Stk->cpty) * sizeof((Stk->bffr)[0]));
 
     Stk->cpty *= 2;
 
@@ -161,7 +163,7 @@ int stkctor(stack_t* Stk, const size_t defcpty){
 
     assert(Stk != 0);
 
-    Stk->bffr = (int*) calloc(defcpty, sizeof(int));
+    Stk->bffr = (stkelm_t*) calloc(defcpty, sizeof(int));
     Stk->cpty = defcpty;
     Stk->sz = 0;
 
@@ -199,7 +201,7 @@ int stkpzn(stack_t* Stk){
 //-------------------------------------------------------------------------------------
 int main(){
 
-    stack_t Stk = {};
+    /*TP(int)*/ stack_t Stk = {}; //A МОЖНО ЛИ ТАК????
 
     stkctor(&Stk);
 
