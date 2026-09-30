@@ -5,7 +5,7 @@ void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _frmfnc, int _nln, str
 int stkvrf(stack_t* Stk, str prvfnc);
 
 //-------------------------------------------------------------------------------------
-void stkerrрhnd(int err);
+void stkerrhnd(_errt err, str prvfnc);
 
 //-------------------------------------------------------------------------------------
 int stkpush(stack_t* Stk, int var, str _fl, str _fromfnc, int _nln);

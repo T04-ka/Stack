@@ -51,6 +51,19 @@ struct stack_t {
 };
 
 
+enum _errt
+{
+    OK            = 0,
+    WRONGFUNCCALL = 1,
+    STRUCTNULLPTR = 2,
+    STKBUFNULLPTR = 3,
+    WRONGCPTY     = 4,
+    WRONGSZ       = 5,
+    STKBUFOVRFLW  = 6,
+    STKBUFUNDRFLW = 7
+};
+
+
 #include "stack.h"
 
 
@@ -62,7 +75,7 @@ struct stack_t {
     int err = stkvrf(Stk, __PRETTY_FUNCTION__);                 \
     if (!err) {                                                 \
                                                                 \
-        stkerrрhnd(err);                                        \
+        stkerrhnd((_errt) err, __PRETTY_FUNCTION__);           \
         stkdmp(Stk, err, __FUNCTION__, _fl, _fromfnc, _nln);    \
         stkdtor(Stk, _fl, _fromfnc, _nln);                      \
         abort();                                                \
@@ -154,26 +167,26 @@ int stkvrf(stack_t* Stk, str prvfnc) {
 }
 
 #undef PRVFNC_OK
-
+/*
 enum _errt
 {
-    OK         = 0,
-    WRNGFNCCL  = 1,
-    STRNLLPTR  = 2,
-    BFRNLLPTR  = 3,
-    WRNGCPTY   = 4,
-    WRNGSZ     = 5,
-    BFROVRFLW  = 6,
-    BFRUNDRFLW = 7
+    OK            = 0,
+    WRONGFUNCCALL = 1,
+    STRUCTNULLPTR = 2,
+    STKBUFNULLPTR = 3,
+    WRONGCPTY     = 4,
+    WRONGSZ       = 5,
+    STKBUFOVRFLW  = 6,
+    STKBUFUNDRFLW = 7
 };
-
-void stkerrрhnd(int err) {
+*/
+void stkerrhnd(_errt err, str prvfnc) {
 
     switch (err)
     {
-        case 1: //WRONG FUNCTION CALLED VERIFICATOR
+        case WRONGFUNCCALL: //WRONG FUNCTION CALLED VERIFICATOR
         {
-
+            printf(RED "Verifier was called from function \"%s\", that has no acces to сall." DEF);
         }
 
         case 2: //STRUCTURE HAS NULL POINTER
