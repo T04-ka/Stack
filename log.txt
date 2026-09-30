@@ -1,50 +1,12 @@
-Stack address = 0x7257a56f0040
-Capacity = 4
-Size = 1
-Buffer adress = 0x7277a69e0010
+//-------------------------------------------------------------------------------------
+Dump was called from function [32mstkpzn.
+[0m[32m"Stk"[0m created in file [32mmain.cpp[0m in [32mmain[0m on line [32m10.
+[0mStack address: [0x6c48f30f0050]. Stack type: "int".
+Capacity = 4. Size = 0. Buffer adress = [0x6c68f43e0010]. 
 
-*[0] = 1
+[0] = 69 (PZN)
 [1] = 69 (PZN)
 [2] = 69 (PZN)
 [3] = 69 (PZN)
 
-Stack address = 0x7257a56f0040
-Capacity = 4
-Size = 2
-Buffer adress = 0x7277a69e0010
-
-*[0] = 1
-*[1] = 2
-[2] = 69 (PZN)
-[3] = 69 (PZN)
-
-Stack address = 0x7257a56f0040
-Capacity = 4
-Size = 3
-Buffer adress = 0x7277a69e0010
-
-*[0] = 1
-*[1] = 2
-*[2] = 3
-[3] = 69 (PZN)
-
-Stack address = 0x7257a56f0040
-Capacity = 4
-Size = 2
-Buffer adress = 0x7277a69e0010
-
-*[0] = 1
-*[1] = 2
-[2] = 69 (PZN)
-[3] = 69 (PZN)
-
-Stack address = 0x7257a56f0040
-Capacity = 4
-Size = 1
-Buffer adress = 0x7277a69e0010
-
-*[0] = 1
-[1] = 69 (PZN)
-[2] = 69 (PZN)
-[3] = 69 (PZN)
-
+//-------------------------------------------------------------------------------------

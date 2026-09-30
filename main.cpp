@@ -7,7 +7,7 @@ int main(){
 
     stack_t Stk = {};
 
-    stkctor(&Stk, __FILE__, __FUNCTION__, __LINE__);
+    stkctor(&Stk, "Stk", __FILE__, __FUNCTION__, __LINE__);
 
     char cmd = 0;
     int n = 0;

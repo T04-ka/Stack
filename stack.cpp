@@ -2,10 +2,19 @@
 #define STACK_H
 
 #include <cstdlib>
+#include <locale>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+
+
+#define RED "\e[31m"
+#define BLUE "\e[34m"
+#define GREEN "\e[32m"
+#define YELLOW "\e[33m"
+#define DEF "\e[0m"
+
 
 typedef const char* str;
 
@@ -23,6 +32,8 @@ str const FNCNMS[] = {
 
 const int NFNCS = 7;
 
+str dmpsep = "//-------------------------------------------------------------------------------------";
+
 //сделать ввывод в дамп, откуда вызов какой функции
 
 struct stack_t {
@@ -31,6 +42,8 @@ struct stack_t {
     size_t sz;
 
     //ifdef
+    str tp;
+    str nm;
     str brnfl;
     str brnfnc;
     int brnln;
@@ -45,31 +58,36 @@ struct stack_t {
 
 //-------------------------------------------------------------------------------------
 
-#define STACK_OK                                \
-    int err = stkvrf(Stk, __PRETTY_FUNCTION__);     \
-    if (err) {                                  \
-        \
-                                                \
-        stkdmp(Stk, err, __FUNCTION__, _fl, _fromfnc, _nln);   \
-        stkdtor(Stk, _fl, _fromfnc, _nln); \
-        abort();                                \
+#define STACK_OK                                                \
+    int err = stkvrf(Stk, __PRETTY_FUNCTION__);                 \
+    if (!err) {                                                 \
+                                                                \
+        stkerrрhnd(err);                                        \
+        stkdmp(Stk, err, __FUNCTION__, _fl, _fromfnc, _nln);    \
+        stkdtor(Stk, _fl, _fromfnc, _nln);                      \
+        abort();                                                \
     }
 
 //-------------------------------------------------------------------------------------
 #define LOG(format, ...) fprintf(Stk->logfl, format, __VA_ARGS__);
+#define SEP fprintf(Stk->logfl, "%s\n", dmpsep);
+void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _frmfnc, int _nln) {
 
-void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _fromfnc, int _nln) {
+    SEP
+    LOG("Dump was called from function " GREEN "%s.\n" DEF, _fnc);
+    LOG(GREEN "\"%s\"" DEF " created in file " GREEN "%s" DEF " in " GREEN "%s" DEF " on line " GREEN "%d.\n" DEF,
+        Stk->nm,                     _fl,             _frmfnc,       _nln);
 
-    LOG("Stack address = %p\n", Stk);
+    LOG("Stack address: [%p]. Stack type: \"%s\".\n", Stk, Stk->tp);
 
     if (Stk == NULL) {
 
         return;
     }
 
-    LOG("Capacity = %zu\n", Stk->cpty);
-    LOG("Size = %zu\n", Stk->sz);
-    LOG("Buffer adress = %p\n", Stk->bffr);
+    LOG("Capacity = %zu. ", Stk->cpty);
+    LOG("Size = %zu. ", Stk->sz);
+    LOG("Buffer adress = [%p]. \n", Stk->bffr);
     putc('\n', Stk->logfl);
     size_t i = 0;
     for (i = 0; i < Stk->sz; i++){
@@ -82,6 +100,7 @@ void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _fromfnc, int _nln) {
         LOG("[%zu] = %d (PZN)\n", i, PZN);
     }
     putc('\n', Stk->logfl);
+    SEP
 }
 
 #undef LOG
@@ -93,7 +112,7 @@ void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _fromfnc, int _nln) {
     int prvfnc_ok = 0;                      \
     for (int i = 0; i < NFNCS; i++) {       \
                                             \
-        if (strcmp(prvfnc, FNCNMS[i])) {       \
+        if (strcmp(prvfnc, FNCNMS[i])) {    \
                                             \
             prvfnc_ok = 1;                  \
             break;                          \
@@ -135,6 +154,62 @@ int stkvrf(stack_t* Stk, str prvfnc) {
 }
 
 #undef PRVFNC_OK
+
+enum _errt
+{
+    OK         = 0,
+    WRNGFNCCL  = 1,
+    STRNLLPTR  = 2,
+    BFRNLLPTR  = 3,
+    WRNGCPTY   = 4,
+    WRNGSZ     = 5,
+    BFROVRFLW  = 6,
+    BFRUNDRFLW = 7
+};
+
+void stkerrрhnd(int err) {
+
+    switch (err)
+    {
+        case 1: //WRONG FUNCTION CALLED VERIFICATOR
+        {
+
+        }
+
+        case 2: //STRUCTURE HAS NULL POINTER
+        {
+
+        }
+
+        case 3: //STACK BUFFER HAS NULL POINTER
+        {
+
+        }
+
+        case 4: //CAPACITY HAS WRONG VALUE
+        {
+
+        }
+
+        case 5: //SIZE HAS WRONG VALUE
+        {
+
+        }
+
+        case 6: //STACKBUFFERUNDERFLOW
+        {
+
+        }
+
+        case 7: //STACKBUFFEROVERFLOW
+        {
+
+        }
+
+        default: {}
+    }
+
+}
 
 
 //-------------------------------------------------------------------------------------
@@ -207,7 +282,7 @@ int stkshrnk(stack_t *Stk, str _fl, str _fromfnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-int stkctor(stack_t* Stk, str _fl, str _fromfnc, int _nln, const size_t defcpty){
+int stkctor(stack_t* Stk, str _nm, str _fl, str _fromfnc, int _nln, const size_t defcpty){
 
     if (Stk == NULL) {
 
@@ -219,6 +294,8 @@ int stkctor(stack_t* Stk, str _fl, str _fromfnc, int _nln, const size_t defcpty)
     Stk->sz = 0;
 
     //ifdef
+    Stk->tp = "int";
+    Stk->nm = _nm;
     Stk->brnfl = _fl;
     Stk->brnfnc = _fromfnc;
     Stk->brnln = _nln;
@@ -233,7 +310,7 @@ int stkctor(stack_t* Stk, str _fl, str _fromfnc, int _nln, const size_t defcpty)
 //-------------------------------------------------------------------------------------
 int stkdtor(stack_t* Stk, str _fl, str _fromfnc, int _nln){
 
-    STACK_OK
+    //STACK_OK
 
     free(Stk->bffr);
     Stk->cpty = -1;
