@@ -11,6 +11,8 @@ int main(){
 
     char cmd = 0;
     int n = 0;
+    //printf(__PRETTY_FUNCTION__);
+    //stkvrf(&Stk, __PRETTY_FUNCTION__);
 
     while (cmd != 'e') {
 

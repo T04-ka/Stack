@@ -21,16 +21,19 @@ typedef const char* str;
 typedef int stkelm_t;
 
 str const FNCNMS[] = {
-    "int stkpush(stack_t* Stk, int var)",
-    "int stkpop(stack_t* Stk, int* var)",
-    "int stkgrow(stack_t* Stk)",
-    "int stkshrnk(stack_t* Stk)",
-    "int stkctor(stack_t* Stk, const size_t defcpty = 4)",
-    "int stkdtor(stack_t* Stk)",
-    "int stkpzn(stack_t* Stk)"
+    "void stkdmp(stack_t*, int, str, str, str, int, str)",
+    "int stkvrf(stack_t*, str)",
+    "void stkerrhnd(_errt, str)",
+    "int stkpush(stack_t*, int, str, str, int)",
+    "int stkpop(stack_t*, int*, str, str, int)",
+    "int stkgrow(stack_t*, str, str, int)",
+    "int stkshrnk(stack_t*, str, str, int)",
+    "int stkctor(stack_t*, str, str, str, int, const size_t)",
+    "int stkdtor(stack_t*, str, str, int)",
+    "int stkpzn(stack_t*, str, str, int)"
 };
 
-const int NFNCS = 7;
+const int NFNCS = 10;
 
 str dmpsep = "//-------------------------------------------------------------------------------------";
 
@@ -73,12 +76,12 @@ enum _errt
 
 #define STACK_OK                                                \
     int err = stkvrf(Stk, __PRETTY_FUNCTION__);                 \
-    if (!err) {                                                 \
+    if (err) {                                                 \
                                                                 \
         stkerrhnd((_errt) err, __PRETTY_FUNCTION__);           \
-        stkdmp(Stk, err, __FUNCTION__, _fl, _fromfnc, _nln);    \
-        stkdtor(Stk, _fl, _fromfnc, _nln);                      \
-        abort();                                                \
+        stkdmp(Stk, err, __FUNCTION__, _fl, _frmfnc, _nln);    \
+        stkdtor(Stk, _fl, _frmfnc, _nln);                      \
+        //abort();                                                \
     }
 
 //-------------------------------------------------------------------------------------
@@ -124,8 +127,7 @@ void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _frmfnc, int _nln) {
 #define PRVFNC_OK                           \
     int prvfnc_ok = 0;                      \
     for (int i = 0; i < NFNCS; i++) {       \
-                                            \
-        if (strcmp(prvfnc, FNCNMS[i])) {    \
+        if (!strcmp(prvfnc, FNCNMS[i])) {   \
                                             \
             prvfnc_ok = 1;                  \
             break;                          \
@@ -136,34 +138,39 @@ void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _frmfnc, int _nln) {
 int stkvrf(stack_t* Stk, str prvfnc) {
 
     PRVFNC_OK
+
+    int err = 0;
+
     if (!prvfnc_ok) {
 
-        return 1; //WRONG PREV FUNCTION CALL
+        err = 1; //WRONG PREV FUNCTION CALL
     }
 
     if (Stk == NULL) {
 
-        return 2; //NULL POINTER
+        err = 2; //NULL POINTER
     }
 
     if (Stk->bffr == NULL) {
 
-        return 3; //BUFFER NULL POINTER
+        err = 3; //BUFFER NULL POINTER
     }
 
     if (Stk->cpty < 1) {
 
-        return 4; //WRONG CAPACITY
+        err = 4; //WRONG CAPACITY
     }
 
     if (Stk->sz > Stk->cpty) {
 
-        return 5; //WRONG SIZE
+        err = 5; //WRONG SIZE
     }
 
     //TODO КАНАРЕЙКИ И ХЭШИ
 
-    return 0;
+    stkerrhnd((_errt) err, prvfnc);
+
+    return err;
 }
 
 #undef PRVFNC_OK
@@ -186,10 +193,13 @@ void stkerrhnd(_errt err, str prvfnc) {
     {
         case WRONGFUNCCALL: //WRONG FUNCTION CALLED VERIFICATOR
         {
-            printf(RED "Verifier was called from function \"%s\", that has no acces to сall." DEF);
+            fprintf(stderr, RED "Verifier was called from function \"%s\", that has no acces to сall.\n" DEF, prvfnc);
+
+            abort();
+            break;
         }
 
-        case 2: //STRUCTURE HAS NULL POINTER
+        case : //STRUCTURE HAS NULL POINTER
         {
 
         }
@@ -226,13 +236,13 @@ void stkerrhnd(_errt err, str prvfnc) {
 
 
 //-------------------------------------------------------------------------------------
-int stkpush(stack_t* Stk, int var, str _fl, str _fromfnc, int _nln){
+int stkpush(stack_t* Stk, int var, str _fl, str _frmfnc, int _nln){
 
-    STACK_OK
+    stkvrf(Stk, __PRETTY_FUNCTION__);
 
     if (Stk->cpty == Stk->sz) {
 
-        stkgrow(Stk, _fl, _fromfnc, _nln);
+        stkgrow(Stk, _fl, _frmfnc, _nln);
     }
 
     *(Stk->bffr + Stk->sz) = var;
@@ -244,9 +254,9 @@ int stkpush(stack_t* Stk, int var, str _fl, str _fromfnc, int _nln){
 // сделть дамп
 
 //-------------------------------------------------------------------------------------
-int stkpop(stack_t* Stk, int* var, str _fl, str _fromfnc, int _nln){
+int stkpop(stack_t* Stk, int* var, str _fl, str _frmfnc, int _nln){
 
-    STACK_OK
+    stkvrf(Stk, __PRETTY_FUNCTION__);
 
     if (Stk->sz == 0) {
 
@@ -259,7 +269,7 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fromfnc, int _nln){
 
     if (2 * Stk->sz < Stk->cpty && Stk->cpty > 5){
 
-        stkshrnk(Stk, _fl, _fromfnc, _nln);
+        stkshrnk(Stk, _fl, _frmfnc, _nln);
     }
 
     return 0;
@@ -267,24 +277,24 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fromfnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-int stkgrow(stack_t* Stk, str _fl, str _fromfnc, int _nln) {
+int stkgrow(stack_t* Stk, str _fl, str _frmfnc, int _nln) {
 
-    STACK_OK
+    stkvrf(Stk, __PRETTY_FUNCTION__);
 
     Stk->bffr = (stkelm_t*) realloc(Stk->bffr, 2 * (Stk->cpty) * sizeof((Stk->bffr)[0]));
 
     Stk->cpty *= 2;
 
-    stkpzn(Stk, _fl, _fromfnc, _nln);
+    stkpzn(Stk, _fl, _frmfnc, _nln);
 
     return 0;
 }
 
 
 //-------------------------------------------------------------------------------------
-int stkshrnk(stack_t *Stk, str _fl, str _fromfnc, int _nln){
+int stkshrnk(stack_t *Stk, str _fl, str _frmfnc, int _nln){
 
-    STACK_OK
+    stkvrf(Stk, __PRETTY_FUNCTION__);
 
     Stk->bffr = (stkelm_t*) realloc(Stk->bffr, (Stk->cpty / 2) * sizeof((Stk->bffr)[0]));
 
@@ -295,11 +305,11 @@ int stkshrnk(stack_t *Stk, str _fl, str _fromfnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-int stkctor(stack_t* Stk, str _nm, str _fl, str _fromfnc, int _nln, const size_t defcpty){
+int stkctor(stack_t* Stk, str _nm, str _fl, str _frmfnc, int _nln, const size_t defcpty){
 
     if (Stk == NULL) {
 
-        stkdmp(Stk, 1, __FUNCTION__, _fl, _fromfnc, _nln);
+        stkdmp(Stk, 1, __FUNCTION__, _fl, _frmfnc, _nln); //DODELAT
     }
 
     Stk->bffr = (stkelm_t*) calloc(defcpty, sizeof(int));
@@ -310,20 +320,20 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fromfnc, int _nln, const size_t
     Stk->tp = "int";
     Stk->nm = _nm;
     Stk->brnfl = _fl;
-    Stk->brnfnc = _fromfnc;
+    Stk->brnfnc = _frmfnc;
     Stk->brnln = _nln;
     Stk->logfl = fopen("log.txt","w");
 
-    stkpzn(Stk, _fl, _fromfnc, _nln);
+    stkpzn(Stk, _fl, _frmfnc, _nln);
 
     return 0;
 }
 
 
 //-------------------------------------------------------------------------------------
-int stkdtor(stack_t* Stk, str _fl, str _fromfnc, int _nln){
+int stkdtor(stack_t* Stk, str _fl, str _frmfnc, int _nln){
 
-    //STACK_OK
+    //stkvrf(Stk, __PRETTY_FUNCTION__);
 
     free(Stk->bffr);
     Stk->cpty = -1;
@@ -340,9 +350,9 @@ int stkdtor(stack_t* Stk, str _fl, str _fromfnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-int stkpzn(stack_t* Stk, str _fl, str _fromfnc, int _nln){
+int stkpzn(stack_t* Stk, str _fl, str _frmfnc, int _nln){
 
-    STACK_OK
+    stkvrf(Stk, __PRETTY_FUNCTION__);
 
     for (size_t i = Stk->sz; i < Stk->cpty; i++){
 
