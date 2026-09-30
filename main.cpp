@@ -20,21 +20,21 @@ int main(){
 
             case 'r':
             {
-                stkpop(&Stk, &n);
+                stkpop(&Stk, &n, __FILE__, __FUNCTION__, __LINE__);
                 printf("Poped: %d\n", n);
-                stkdmp(&Stk, 0);
+                //stkdmp(&Stk, 0);
                 break;
             }
 
             case 'w':
             {
-                stkpush(&Stk, n);
-                stkdmp(&Stk, 0);
+                stkpush(&Stk, n, __FILE__, __FUNCTION__, __LINE__);
+                //stkdmp(&Stk, 0);
                 break;
             }
         }
     }
 
 
-    stkdtor(&Stk);
+    stkdtor(&Stk, __FILE__, __FUNCTION__, __LINE__);
 }

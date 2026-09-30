@@ -1,67 +1,26 @@
 //-------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------
-void stkdmp(stack_t* Stk, int err);
-
-
-int stkvrf(stack_t* Stk, const char* prvfnc);
-
-
+void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _fromfnc, int _nln) ;
 
 //-------------------------------------------------------------------------------------
-/// Adds the ellement to stack
-///
-/// @return 0 on success, non-null number on failure.
-///
-//-------------------------------------------------------------------------------------
-int stkpush(stack_t* Stk, int var);
-
-
+int stkvrf(stack_t* Stk, str prvfnc) ;
 
 //-------------------------------------------------------------------------------------
-/// Gets the element from stack
-///
-/// @param[in]  Stk  Pointer to Stack structure
-/// @param[out] elmw Pointer to a variable for writing.
-///
-/// @return 0 on success, non-null number on failure.
-///
-//-------------------------------------------------------------------------------------
-int stkpop(stack_t* Stk, int* var);
-
-
+int stkpush(stack_t* Stk, int var, str _fl, str _fromfnc, int _nln);
 
 //-------------------------------------------------------------------------------------
-/// Increases the stack capacity
-///
-/// @return 0 on success, non-null number on failure.
-///
-//-------------------------------------------------------------------------------------
-int stkgrow(stack_t* Stk);
-
-
+int stkpop(stack_t* Stk, int* var, str _fl, str _fromfnc, int _nln);
 
 //-------------------------------------------------------------------------------------
-/// Reduses the stack capacity
-///
-/// @return 0 on success, non-null number on failure.
-///
-//-------------------------------------------------------------------------------------
-int stkshrnk(stack_t* Stk);
-
-
+int stkgrow(stack_t* Stk, str _fl, str _fromfnc, int _nln) ;
 
 //-------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------
-int stkctor(stack_t* Stk, const char* brnfl, const char* brnfnc, int brnln, const size_t defcpty = 4);
-
-
+int stkshrnk(stack_t *Stk, str _fl, str _fromfnc, int _nln);
 
 //-------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------
-int stkdtor(stack_t* Stk);
-
-
+int stkctor(stack_t* Stk, str _fl, str _fromfnc, int _nln, const size_t defcpty = 4);
 
 //-------------------------------------------------------------------------------------
+int stkdtor(stack_t* Stk, str _fl, str _fromfnc, int _nln);
+
 //-------------------------------------------------------------------------------------
-int stkpzn(stack_t* Stk);
+int stkpzn(stack_t* Stk, str _fl, str _fromfnc, int _nln);
