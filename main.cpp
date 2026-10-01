@@ -14,6 +14,7 @@ int main(){
 
     STACK_DUMP(Stk1); //ВЫЗОВИ ДАМП ДО CTORA И ЧЕКНИ ЧТО БУДЕТ
 
+    stkpzn(Stk, __FILE__, __PRETTY_FUNCTION__, __LINE__);
 
     //ERR 1 TEST
     // str _fl = __FILE__, _fnc = __FUNCTION__;
