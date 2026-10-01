@@ -37,11 +37,11 @@ str const FNCNMS[] = {
     "void stkerrhnd(stack_t*, _errt, str, str, str, int)",
     "int stkpush(stack_t*, int, str, str, int)",
     "int stkpop(stack_t*, int*, str, str, int)",
-    "int stkgrow(stack_t*, str, str, int)",
-    "int stkshrnk(stack_t*, str, str, int)",
+    "int stkgrow(stack_t*, str, str, str, int)",
+    "int stkshrnk(stack_t*, str, str, str, int)",
     "int stkctor(stack_t*, str, str, str, int, size_t)",
     "int stkdtor(stack_t*, str, str, int)",
-    "int stkpzn(stack_t*, str, str, int)"
+    "int stkpzn(stack_t*, str, str, str, int)"
 };
 
 const int NFNCS = 10;
@@ -65,7 +65,7 @@ struct stack_t {
 enum _errt
 {
     STK_OK                       = 0,
-    STK_WRONG_FUNC_CALLED_STKVRF = 1,
+    STK_WRONG_PREVFUNC_ACCESS    = 1,
     STK_STRUCT_NULLPTR           = 2,
     STK_BUFFER_NULLPTR           = 3,
     STK_WRONG_CPTY               = 4,
@@ -80,8 +80,8 @@ enum _errt
 
 #include "stack.h"
 
-#define STACK_DUMP(STKNM) stkdmp(&STKNM, __PRETTY_FUNCTION__, __FILE__, __FUNCTION__, __LINE__);
-#define STACK_CTOR(STKNM, ...) stkctor(&STKNM, #STKNM, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define STACK_DUMP(STKNM) stkdmp(&STKNM, __PRETTY_FUNCTION__, __FILE__, __PRETTY_FUNCTION__, __LINE__);
+#define STACK_CTOR(STKNM, ...) stkctor(&STKNM, #STKNM, __FILE__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);
 
 
 #define PZN 69
@@ -89,7 +89,7 @@ enum _errt
 //-------------------------------------------------------------------------------------
 
 #define STACK_OK                                                                                \
-    int err = stkvrf(Stk, __PRETTY_FUNCTION__);                                                 \
+    int err = stkvrf(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);                                                 \
     stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
 
@@ -103,7 +103,8 @@ enum _errt
 #define PREVFUNC_ACCESS_OK                                                  \
     int prvfnc_ok = 0;                                                      \
     for (int i = 0; i < NFNCS; i++) {                                       \
-        if (!strcmp(__PRETTY_FUNCTION__, FNCNMS[i])) {                      \
+        printf("strcmp(%s, %s) = %d\n", _prvfnc, FNCNMS[i], strcmp(_prvfnc, FNCNMS[i])); \
+        if (!strcmp(_prvfnc, FNCNMS[i])) {                                 \
                                                                             \
             prvfnc_ok = 1;                                                  \
             break;                                                          \
@@ -111,7 +112,7 @@ enum _errt
     }                                                                       \
     if (!prvfnc_ok) {                                                       \
                                                                             \
-        stkerrhnd(Stk, (_errt) 1,  __PRETTY_FUNCTION__, _fl, _fnc, _nln);   \
+        stkerrhnd(Stk, STK_WRONG_PREVFUNC_ACCESS,  __PRETTY_FUNCTION__, _fl, _fnc, _nln);   \
     }
 
 
@@ -180,11 +181,11 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 //printf("strcmp(%s, %s) = %d\n", prvfnc, FNCNMS[i], strcmp(prvfnc, FNCNMS[i]));
 
 
-#define IS_FUNCTION_STKCDTOR !strcmp("int stkctor(stack_t*, str, str, str, int, size_t)", prvfnc) || !strcmp("int stkdtor(stack_t*, str, str, int)", prvfnc)
+#define IS_FUNCTION_STKCDTOR !strcmp("int stkctor(stack_t*, str, str, str, int, size_t)", _prvfnc) || !strcmp("int stkdtor(stack_t*, str, str, int)", prvfnc)
 
-int stkvrf(stack_t* Stk, str prvfnc) {
+int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
-    //PREVFUNC_ACCESS_OK
+    PREVFUNC_ACCESS_OK
 
 
     if (Stk == NULL) {
@@ -263,10 +264,10 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case STK_WRONG_FUNC_CALLED_STKVRF: //WRONG FUNCTION CALLED VERIFICATOR
+        case STK_WRONG_PREVFUNC_ACCESS://WRONG FUNCTION CALLED VERIFICATOR
         {
-            PRINT_START_MESSAGE(1, STK_WRONG_FUNC_CALLED_STKVRF);
-            ERRLOG("Verifier was called from function \"%s\", that has no acces to сall.", _prvfnc);
+            PRINT_START_MESSAGE(1, STK_WRONG_PREVFUNC_ACCESS);
+            ERRLOG("Function " FAT "%s" DEF" was called from function " FAT "%s" DEF ", that has no acces to сall.", _prvfnc, _fnc);
             PRINT_WHERE_FROM_CALLED
 
             PRINT_END_MESSAGE
@@ -444,7 +445,7 @@ int stkpush(stack_t* Stk, int var, str _fl, str _fnc, int _nln){
 
     if (Stk->cpty == Stk->sz) {
 
-        stkgrow(Stk, _fl, _fnc, _nln);
+        stkgrow(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
     }
 
     *(Stk->bffr + Stk->sz) = var;
@@ -476,7 +477,7 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
 
     if (2 * Stk->sz < Stk->cpty && Stk->cpty > 5){
 
-        stkshrnk(Stk, _fl, _fnc, _nln);
+        stkshrnk(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
     }
 
     return 0;
@@ -484,7 +485,7 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-int stkgrow(stack_t* Stk, str _fl, str _fnc, int _nln) {
+int stkgrow(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
     PREVFUNC_ACCESS_OK
 
@@ -502,14 +503,14 @@ int stkgrow(stack_t* Stk, str _fl, str _fnc, int _nln) {
 
     Stk->cpty *= 2;
 
-    stkpzn(Stk, _fl, _fnc, _nln);
+    stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
     return 0;
 }
 
 
 //-------------------------------------------------------------------------------------
-int stkshrnk(stack_t *Stk, str _fl, str _fnc, int _nln){
+int stkshrnk(stack_t *Stk, str _prvfnc, str _fl, str _fnc, int _nln){
 
     PREVFUNC_ACCESS_OK
 
@@ -517,7 +518,8 @@ int stkshrnk(stack_t *Stk, str _fl, str _fnc, int _nln){
 
     stkelm_t* tmpbf = (stkelm_t*) realloc(Stk->bffr, (Stk->cpty / 2) * sizeof((Stk->bffr)[0]));
 
-    tmpbf = NULL;
+    //FOR ERR CHECK
+    //tmpbf = NULL;
     if (tmpbf == NULL) {
 
         err = 6;
@@ -566,7 +568,7 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
     Stk->_logfl = stderr;
     //Stk->_logfl = fopen("log.txt","w"); ////TODO: SDELAT DEFINOM ПЕРЕКЛЮЧЕНИЕ НА STDERR
 
-    stkpzn(Stk, _fl, _fnc, _nln);
+    stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
 
     return 0;
@@ -593,7 +595,7 @@ int stkdtor(stack_t* Stk, str _fl, str _fnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-int stkpzn(stack_t* Stk, str _fl, str _fnc, int _nln){
+int stkpzn(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln){
 
     PREVFUNC_ACCESS_OK
 

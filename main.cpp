@@ -14,7 +14,8 @@ int main(){
 
     STACK_DUMP(Stk1); //ВЫЗОВИ ДАМП ДО CTORA И ЧЕКНИ ЧТО БУДЕТ
 
-    stkpzn(Stk, __FILE__, __PRETTY_FUNCTION__, __LINE__);
+    //stkpzn(Stk, __PRETTY_FUNCTION__, __FILE__, __PRETTY_FUNCTION__, __LINE__);
+    //stkshrnk(Stk, __PRETTY_FUNCTION__, __FILE__, __PRETTY_FUNCTION__, __LINE__);
 
     //ERR 1 TEST
     // str _fl = __FILE__, _fnc = __FUNCTION__;
@@ -37,8 +38,8 @@ int main(){
         switch (cmd) {
 
             case 'r':
-            {
-                stkpop(Stk, NULL, __FILE__, __FUNCTION__, __LINE__);
+            {              //ПОМЕНЯТЬ НА NULL
+                stkpop(Stk, &n, __FILE__, __PRETTY_FUNCTION__, __LINE__);
                 printf("Poped: %d\n", n);
                 //stkdmp(&Stk, 0);
                 break;
@@ -46,7 +47,7 @@ int main(){
 
             case 'w':
             {
-                stkpush(Stk, n, __FILE__, __FUNCTION__, __LINE__);
+                stkpush(Stk, n, __FILE__, __PRETTY_FUNCTION__, __LINE__);
                 //stkdmp(&Stk, 0);
                 break;
             }
@@ -56,5 +57,5 @@ int main(){
     }
 
 
-    stkdtor(Stk, __FILE__, __FUNCTION__, __LINE__);
+    stkdtor(Stk, __FILE__, __PRETTY_FUNCTION__, __LINE__);
 }
