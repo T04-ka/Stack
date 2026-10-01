@@ -9,6 +9,8 @@ int main(){
     stack_t* Stk = &Stk1;
     stkctor(Stk, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
 
+    //stkctor(NULL, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
+
     //ERR 1 TEST
     // str _fl = __FILE__, _fnc = __FUNCTION__;
     // int _nln = __LINE__;
@@ -19,7 +21,9 @@ int main(){
     //printf(__PRETTY_FUNCTION__);
     //stkerrhnd((_errt) stkvrf(&Stk, __PRETTY_FUNCTION__), __PRETTY_FUNCTION__);
 
-    Stk1.bffr = NULL;
+    //Stk1.bffr = NULL;
+
+    Stk1.cpty = STK_MXBUFSZ + 10;
 
     while (cmd != 'e') {
 

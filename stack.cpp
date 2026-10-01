@@ -173,9 +173,9 @@ int stkvrf(stack_t* Stk, str prvfnc) {
     }
 
 
-    if (Stk->cpty < 1) {
+    if (Stk->cpty > STK_MXBUFSZ) {
 
-        return 4; //WRONG CAPACITY
+        return 4; //WRONG CAPACITY //TODO сделать проверку на длину динамической памяти
     }
 
     if (Stk->sz > Stk->cpty) {
@@ -216,7 +216,7 @@ enum _errt
 #define FRMT1 "=========================================================="
 #define FRMT2 "======================================================="
 #define FRMT3 "========================================================="
-#define FRMT4 "==========================================================="
+#define FRMT4 "========================================================="
 #define FRMT5 "=========================================================="
 #define FRMT6 "==========================================================="
 #define FRMT7 "========================================================="
@@ -276,7 +276,18 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 
         case 4: //CAPACITY HAS WRONG VALUE
         {
+            PRNTERRMSG(4, STK_WRONG_CPTY);
+            ERRLOG("For some reason, capacity has wrong value: " FAT "%zu" DEF ". In particular, it's larger than maximum size of stack buffer: " FAT"%zu" DEF".", Stk->cpty, STK_MXBUFSZ);
+            PRINT_WHERE_FROM_CALLED
 
+            //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
+            //putc('\n', stderr);
+
+            //stkdtor(Stk, "", "", 0);
+            END
+
+            abort();
+            break;
         }
 
         case 5: //SIZE HAS WRONG VALUE
