@@ -1,4 +1,5 @@
-#define MXBUFLEN 2
+#define STK_MXBUFSZ 1000
+
 
 #include "stack.cpp"
 
@@ -9,7 +10,7 @@ int main(){
 
     stack_t Stk1 = {};
     stack_t* Stk = &Stk1;
-    stkctor(Stk, "Stk", __FILE__, __FUNCTION__, __LINE__); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
+    stkctor(Stk, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
 
     //ERR 1 TEST
     // str _fl = __FILE__, _fnc = __FUNCTION__;
