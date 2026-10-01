@@ -23,7 +23,7 @@ int main(){
 
     //Stk1.bffr = NULL;
 
-    Stk1.sz = STK_MXBUFSZ + 10;
+    //Stk1.sz = STK_MXBUFSZ + 10;
 
     while (cmd != 'e') {
 

@@ -13,16 +13,17 @@
 #define FAT "\e[1m"
 #define DEF "\e[0m"
 
-#define STK_HEAD_MXBUFSZ (SIZE_MAX / 8)
+#define STK_HEAD_MXBFFRSZ (SIZE_MAX / 8)
 
-#ifndef STK_MXBUFSZ
-#define STK_MXBUFSZ STK_HEAD_MXBUFSZ
+#ifndef STK_MXBFFRSZ
+#define STK_MXBFFRSZ STK_HEAD_MXBFFRSZ
 #endif
 
 #ifdef str
 fprintf(stderr, RED FAT "YASHA PIDOR EBANIY\n" DEF);
 abort();
 #endif
+
 typedef const char* str;
 
 #ifndef stkelm_t
@@ -68,13 +69,13 @@ enum _errt
     STK_OK                       = 0,
     STK_WRONG_FUNC_CALLED_STKVRF = 1,
     STK_STRUCT_NULLPTR           = 2,
-    STK_BUF_NULLPTR              = 3,
+    STK_BUFFER_NULLPTR           = 3,
     STK_WRONG_CPTY               = 4,
     STK_WRONG_SZ                 = 5,
-    STK_BUF_OVRFLW               = 6,
-    STK_BUF_UNDRFLW              = 7,
-    STK_DEF_CPTY_EXC             = 8,
-    STK_WRONG_MX_BUF_SZ_DEF      = 9
+    STK_MALLOC_FAILED            = 6,
+    STK_BUFFER_UNDERFLOW         = 7,
+    STK_DEFINED_CPTY_EXCESS      = 8,
+    STK_WRONG_MXBFFRSZ_DEFINED   = 9
 };
 
 
@@ -98,19 +99,19 @@ enum _errt
 void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
     SEP
-    LOG("Dump was called by error handler from function " FAT "%s" FAT ".\n", _frmfnc);
-    LOG(FAT "\"%s\"" DEF " created in file " FAT "%s" DEF" in " FAT "%s" DEF " on line " FAT "%d" DEF ".\n",
+    LOG("Dump was called by error handler from function " FAT "%s" FAT ". ", _frmfnc);
+    LOG(FAT "\"%s\"" DEF " created in file " FAT "%s" DEF" in " FAT "%s" DEF " on line " FAT "%d" DEF ".\n\n",
               Stk->_nm,                              Stk->_brnfl,          Stk->_brnfnc,               Stk->_brnln);
 
 
-    LOG("Stack address: [%p]. Stack type: \"%s\".\n", Stk, Stk->_tp);
+    LOG("\tStack address: [%p]. Stack type: \"%s\".\n", Stk, Stk->_tp);
 
     if (Stk == NULL) {
 
         return;
     }
 
-    LOG("Capacity = %zu. ", Stk->cpty);
+    LOG("\tCapacity = %zu. ", Stk->cpty);
     LOG("Size = %zu. ", Stk->sz);
     LOG("Buffer adress = [%p]. \n", Stk->bffr);
 
@@ -123,12 +124,12 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
     size_t i = 0;
     for (i = 0; i < Stk->sz; i++){
 
-        LOG("*[%zu] = %d\n", i, Stk->bffr [i]); //TODO СДЕЛАТЬ МАКРОСС ДЛЯ ПРИЗВОЛЬНОГО ТИПА
+        LOG("\t*[%zu] = %d\n", i, Stk->bffr [i]); //TODO СДЕЛАТЬ МАКРОСС ДЛЯ ПРИЗВОЛЬНОГО ТИПА
     }
 
     for (; i < Stk->cpty; i++) {
 
-        LOG("[%zu] = %d (PZN)\n", i, PZN);
+        LOG("\t[%zu] = %d (PZN)\n", i, PZN);
     }
     NLN
     SEP
@@ -173,7 +174,7 @@ int stkvrf(stack_t* Stk, str prvfnc) {
     }
 
 
-    if (Stk->cpty > STK_MXBUFSZ) {
+    if (Stk->cpty > STK_MXBFFRSZ) {
 
         return 4; //WRONG CAPACITY //TODO сделать проверку на длину динамической памяти
     }
@@ -200,11 +201,11 @@ enum _errt
     OK            = 0,
     STK_WRONG_FUNC_CALLED_STKVRF = 1,
     STK_STRUCT_NULLPTR = 2,
-    STK_BUF_NULLPTR = 3,
+    STK_BUFFER_NULLPTR = 3,
     WRONGCPTY     = 4,
     WRONGSZ       = 5,
-    STK_BUF_UNDRFLW  = 6,
-    STK_BUF_UNDRFLW = 7,
+    STK_BUFFER_UNDRFLW  = 6,
+    STK_BUFFER_UNDRFLW = 7,
     STK_DEF_CPTY_EXC    = 8
 };
 */
@@ -218,7 +219,7 @@ enum _errt
 #define FRMT3 "========================================================="
 #define FRMT4 "========================================================="
 #define FRMT5 "==========================================================="
-#define FRMT6 "==========================================================="
+#define FRMT6 "========================================================"
 #define FRMT7 "========================================================="
 #define FRMT8 "==========================================================="
 #define FRMT9 "====================================================="
@@ -259,9 +260,9 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case STK_BUF_NULLPTR: //STACK BUFFER HAS NULL POINTER
+        case STK_BUFFER_NULLPTR: //STACK BUFFER HAS NULL POINTER
         {
-            PRNTERRMSG(3, STK_BUF_NULLPTR);
+            PRNTERRMSG(3, STK_BUFFER_NULLPTR);
             ERRLOG("The pointer to the buffer turned out to be NULL.%s", "");
             PRINT_WHERE_FROM_CALLED
             stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
@@ -277,7 +278,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
         case STK_WRONG_CPTY: //CAPACITY HAS WRONG VALUE
         {
             PRNTERRMSG(4, STK_WRONG_CPTY);
-            ERRLOG("For some reason, stack buffer capacity has wrong value: " FAT "%zu" DEF ". In particular, it's larger than maximum size of stack buffer: " FAT"%zu" DEF".", Stk->cpty, STK_MXBUFSZ);
+            ERRLOG("For some reason, stack buffer capacity has wrong value: " FAT "%zu" DEF ". In particular, it's larger than maximum size of stack buffer: " FAT"%zu" DEF".", Stk->cpty, STK_MXBFFRSZ);
             PRINT_WHERE_FROM_CALLED
 
             //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
@@ -307,14 +308,25 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case 6: //STACKBUFFEROVERFLOW
+        case STK_MALLOC_FAILED: //6: FAILED MALLOCATION
         {
+            PRNTERRMSG(6, STK_MALLOC_FAILED);
+            ERRLOG("For some reason, memory allocation in function " FAT"%s" DEF" failed.", _prvfnc);
+            PRINT_WHERE_FROM_CALLED
 
+            stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
+
+            END
+
+            stkdtor(Stk, "", "", 0);
+
+            abort();
+            break;
         }
 
-        case STK_BUF_UNDRFLW: //STACKBUFFERUNDERFLOW
+        case STK_BUFFER_UNDERFLOW: //STACKBUFFERUNDERFLOW
         {
-            PRNTERRMSG(7, STK_BUF_UNDRFLW);
+            PRNTERRMSG(7, STK_BUFFER_UNDERFLOW);
             ERRLOG("Stack buffer underflow.%s", "");
             PRINT_WHERE_FROM_CALLED
             //putc('\n', stderr);
@@ -328,24 +340,26 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case STK_DEF_CPTY_EXC:
+        case STK_DEFINED_CPTY_EXCESS:
         {
-            PRNTERRMSG(8, STK_DEF_CPTY_EXC);
+            PRNTERRMSG(8, STK_DEFINED_CPTY_EXCESS);
             ERRLOG("An attempt to create an array that is too large. Max stack buffer len: " FAT "%zu" DEF ". Given capacity: " FAT "%zu" DEF".",
-                                                                                                STK_MXBUFSZ,                       Stk->cpty);
+                                                                                                STK_MXBFFRSZ,                       Stk->cpty);
             PRINT_WHERE_FROM_CALLED
 
             END
+
+            stkdtor(Stk, _fl, _fnc, _nln);
 
             abort();
             break;
         }
 
-        case STK_WRONG_MX_BUF_SZ_DEF:
+        case STK_WRONG_MXBFFRSZ_DEFINED :
         {
-            PRNTERRMSG(9, STK_WRONG_MX_BUF_SZ_DEF);
-            ERRLOG("Bad attempt to define STK_MXBUFSZ. STK_MXBUFSZ defined as " FAT "%zu" DEF ", which is too large.",
-                                                                                        STK_MXBUFSZ);
+            PRNTERRMSG(9, STK_WRONG_MXBFFRSZ_DEFINED );
+            ERRLOG("Bad attempt to define STK_MXBFFRSZ. STK_MXBFFRSZ defined as " FAT "%zu" DEF ", which is too large.",
+                                                                                        STK_MXBFFRSZ);
 
             END
 
@@ -395,7 +409,7 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
 
     if (Stk->sz == 0) {
 
-        stkerrhnd(Stk, STK_BUF_UNDRFLW, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+        stkerrhnd(Stk, STK_BUFFER_UNDERFLOW, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
         return 7;
     }
 
@@ -417,6 +431,13 @@ int stkgrow(stack_t* Stk, str _fl, str _fnc, int _nln) {
     STACK_OK
 
     stkelm_t* tmpbf = (stkelm_t*) realloc(Stk->bffr, 2 * (Stk->cpty) * sizeof((Stk->bffr)[0]));
+    //tmpbf = NULL;
+    if (tmpbf == NULL) {
+
+        err = 6;
+        stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+        return err;
+    }
 
     Stk->bffr = tmpbf;
 
@@ -433,8 +454,17 @@ int stkshrnk(stack_t *Stk, str _fl, str _fnc, int _nln){
 
     STACK_OK
 
-    Stk->bffr = (stkelm_t*) realloc(Stk->bffr, (Stk->cpty / 2) * sizeof((Stk->bffr)[0]));
+    stkelm_t* tmpbf = (stkelm_t*) realloc(Stk->bffr, (Stk->cpty / 2) * sizeof((Stk->bffr)[0]));
 
+    tmpbf = NULL;
+    if (tmpbf == NULL) {
+
+        err = 6;
+        stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+        return err;
+    }
+
+    Stk->bffr = tmpbf;
     Stk->cpty /= 2;
 
     return 0;
@@ -449,8 +479,8 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
 
     STACK_OK
-    //printf("read: %zu, head: %zu", STK_MXBUFSZ, STK_HEAD_MXBUFSZ);
-    if (STK_MXBUFSZ > STK_HEAD_MXBUFSZ) {
+    //printf("read: %zu, head: %zu", STK_MXBFFRSZ, STK_HEAD_MXBFFRSZ);
+    if (STK_MXBFFRSZ > STK_HEAD_MXBFFRSZ) {
 
         err = 9;
         ERROR_HANDLER_CALL
@@ -458,7 +488,7 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     Stk->cpty = defcpty;
 
-    if (defcpty > STK_MXBUFSZ) {
+    if (defcpty > STK_MXBFFRSZ) {
 
         err = 8;
         ERROR_HANDLER_CALL
