@@ -95,13 +95,13 @@ enum _errt
 #define LOG(format, ...) fprintf(outfl, format, __VA_ARGS__);
 #define SEP fprintf(Stk->_logfl, "\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 #define NLN putc('\n', Stk->_logfl);
-#define IS_CALLEDFUNCTION_STKERRHND !strcmp("void stkerrhnd(stack_t*, _errt, str, str, str, int)", _frmfnc)
+#define IF_CALLEDFUNCTION_STKERRHND if (!strcmp("void stkerrhnd(stack_t*, _errt, str, str, str, int)", _frmfnc))
 
 void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
     FILE* outfl = stderr;
 
-    if (IS_CALLEDFUNCTION_STKERRHND) {
+    IF_CALLEDFUNCTION_STKERRHND {
 
         outfl = stderr;
 
@@ -124,11 +124,6 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
 
     LOG("\tStack address: [%p]. Stack type: \"%s\".\n", Stk, Stk->_tp);
-
-    if (Stk == NULL) {
-
-        return;
-    }
 
     LOG("\tCapacity = %zu. ", Stk->cpty);
     LOG("Size = %zu. ", Stk->sz);
@@ -235,7 +230,7 @@ enum _errt
 
 #define FRMT1 "=========================================================="
 #define FRMT2 "======================================================="
-#define FRMT3 "========================================================="
+#define FRMT3 "======================================================="
 #define FRMT4 "========================================================="
 #define FRMT5 "==========================================================="
 #define FRMT6 "========================================================"
