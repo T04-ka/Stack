@@ -8,7 +8,7 @@ int main(){
     stack_t Stk1 = {};
     stack_t* Stk = &Stk1;
     stkctor(Stk, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
-
+    STACK_DUMP(Stk);
     //stkctor(NULL, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
 
     //ERR 1 TEST

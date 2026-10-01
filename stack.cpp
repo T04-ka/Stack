@@ -46,8 +46,6 @@ str const FNCNMS[] = {
 
 const int NFNCS = 10;
 
-str dmpsep = "\n-----------------------------------------------------------------------------------------\n";
-
 
 struct stack_t {
     stkelm_t* bffr;
@@ -81,6 +79,8 @@ enum _errt
 
 #include "stack.h"
 
+#define STACK_DUMP(STKPTR) stkdmp(STKPTR, __PRETTY_FUNCTION__, __FILE__, __FUNCTION__, __LINE__);
+
 
 #define PZN 69
 
@@ -92,14 +92,33 @@ enum _errt
 
 
 //-------------------------------------------------------------------------------------
-#define LOG(format, ...) fprintf(Stk->_logfl, format, __VA_ARGS__);
-#define SEP fprintf(Stk->_logfl, "%s\n", dmpsep);
+#define LOG(format, ...) fprintf(outfl, format, __VA_ARGS__);
+#define SEP fprintf(Stk->_logfl, "\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 #define NLN putc('\n', Stk->_logfl);
+#define IS_CALLEDFUNCTION_STKERRHND !strcmp("void stkerrhnd(stack_t*, _errt, str, str, str, int)", _frmfnc)
 
 void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
-    SEP
-    LOG("Dump was called by error handler from function " FAT "%s" FAT ". ", _frmfnc);
+    FILE* outfl = stderr;
+
+    if (IS_CALLEDFUNCTION_STKERRHND) {
+
+        outfl = stderr;
+
+        SEP
+        LOG("Dump was called by error handler. %s", "");
+    }
+    else {
+
+        STACK_OK
+
+        outfl = Stk->_logfl;
+
+        SEP
+        LOG("Dump was called from function " FAT "%s" FAT ". ", _frmfnc);
+    }
+
+
     LOG(FAT "\"%s\"" DEF " created in file " FAT "%s" DEF" in " FAT "%s" DEF " on line " FAT "%d" DEF ".\n\n",
               Stk->_nm,                              Stk->_brnfl,          Stk->_brnfnc,               Stk->_brnln);
 
@@ -159,12 +178,12 @@ int stkvrf(stack_t* Stk, str prvfnc) {
 
     if (!prvfnc_ok) {
 
-        return 1; //DONE
+        return 1;
     }
 
     if (Stk == NULL) {
 
-        return 2; //DONE
+        return 2;
     }
 
 
@@ -181,12 +200,12 @@ int stkvrf(stack_t* Stk, str prvfnc) {
 
     if (Stk->sz > Stk->cpty) {
 
-        return 5; //WRONG SIZE
+        return 5;
     }
 
     if (Stk->bffr == NULL) {
 
-        return 3; //BUFFER NULL POINTER
+        return 3;
     }
 
     //TODO КАНАРЕЙКИ И ХЭШИ
@@ -220,13 +239,13 @@ enum _errt
 #define FRMT4 "========================================================="
 #define FRMT5 "==========================================================="
 #define FRMT6 "========================================================"
-#define FRMT7 "========================================================="
+#define FRMT7 "======================================================="
 #define FRMT8 "==========================================================="
 #define FRMT9 "====================================================="
 
 #define PRNTERRMSG(N, ERR) ERRLOG(RED FAT FRMT##N " CRITICAL FATAL PANIC UNRECOVERABLE ERROR " #N ": " #ERR " %s" FRMT##N "\n\n" DEF, "");
 
-#define PRINT_WHERE_FROM_CALLED ERRLOG(" Last stack call was in " FAT"%s" DEF":" FAT"%d" DEF" in function " FAT"%s" DEF".\n", _fl, _nln, _fnc);
+#define PRINT_WHERE_FROM_CALLED ERRLOG(" Error handler was called from function " FAT"%s" DEF". Last stack call was in " FAT"%s" DEF":" FAT"%d" DEF" in function " FAT"%s" DEF".\n", _prvfnc, _fl, _nln, _fnc);
 
 void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln) {
 
@@ -238,8 +257,10 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             ERRLOG("Verifier was called from function \"%s\", that has no acces to сall.", _prvfnc);
             PRINT_WHERE_FROM_CALLED
 
-            //stkdtor(Stk, "", "", 0); //СДЕЛАТЬ ПО МАКРОССУ STDERR (CМ DTOR)
             END
+
+            stkdtor(Stk, "", "", 0);
+
             abort();
             break;
         }
@@ -250,10 +271,6 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             ERRLOG("NULL was passed as a pointer to the structure.%s", "");
             PRINT_WHERE_FROM_CALLED
 
-            //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
-            //putc('\n', stderr);
-
-            //stkdtor(Stk, "", "", 0);
             END
 
             abort();
@@ -265,11 +282,13 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             PRNTERRMSG(3, STK_BUFFER_NULLPTR);
             ERRLOG("The pointer to the buffer turned out to be NULL.%s", "");
             PRINT_WHERE_FROM_CALLED
-            stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
 
-            //stkdtor(Stk, "", "", 0);
+            stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+
 
             END
+
+            //stkdtor(Stk, "", "", 0); TODO
 
             abort();
             break;
@@ -286,6 +305,8 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 
             //stkdtor(Stk, "", "", 0);
             END
+
+            stkdtor(Stk, "", "", 0);
 
             abort();
             break;
@@ -304,6 +325,8 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             //stkdtor(Stk, "", "", 0);
             END
 
+            stkdtor(Stk, "", "", 0);
+
             abort();
             break;
         }
@@ -314,7 +337,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             ERRLOG("For some reason, memory allocation in function " FAT"%s" DEF" failed.", _prvfnc);
             PRINT_WHERE_FROM_CALLED
 
-            stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
+            stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
             END
 
@@ -330,7 +353,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             ERRLOG("Stack buffer underflow.%s", "");
             PRINT_WHERE_FROM_CALLED
             //putc('\n', stderr);
-            stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
+            stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
             END
 
