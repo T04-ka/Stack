@@ -152,7 +152,7 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
 #define IS_FUNCTION_STKCDTOR !strcmp("int stkctor(stack_t*, str, str, str, int, size_t)", prvfnc) || !strcmp("int stkdtor(stack_t*, str, str, int)", prvfnc)
 
-int stkvrf(stack_t* Stk, str prvfnc, size_t defcpty_ONLYFORSTKCTOR) {
+int stkvrf(stack_t* Stk, str prvfnc) {
 
     PRVFNC_OK
 
@@ -309,7 +309,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
         {
             PRNTERRMSG(8, STK_DEF_CPTY_EXC);
             ERRLOG("An attempt to create an array that is too large. Max stack buffer len: " FAT "%zu" DEF ". Given capacity: " FAT "%zu" DEF".",
-                                                                                        (size_t) STK_MXBUFSZ,                       Stk->cpty);
+                                                                                                STK_MXBUFSZ,                       Stk->cpty);
             PRINT_WHERE_FROM_CALLED
 
             END
@@ -322,7 +322,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
         {
             PRNTERRMSG(9, STK_WRONG_MX_BUF_SZ_DEF);
             ERRLOG("Bad attempt to define STK_MXBUFSZ. STK_MXBUFSZ defined as " FAT "%zu" DEF ", which is too large.",
-                                                                                 (size_t) STK_MXBUFSZ);
+                                                                                        STK_MXBUFSZ);
 
             END
 
@@ -469,8 +469,8 @@ int stkdtor(stack_t* Stk, str _fl, str _fnc, int _nln){
     STACK_OK
 
     free(Stk->bffr); //TODO IS_MALLOCED
-    Stk->cpty = -1;
-    Stk->sz = -1;
+    Stk->cpty =  -1u;
+    Stk->sz = -1u;
 
     //ifdef
     Stk->_brnfl = "DED_LOH";

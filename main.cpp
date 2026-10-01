@@ -41,6 +41,8 @@ int main(){
                 //stkdmp(&Stk, 0);
                 break;
             }
+
+            default: {}
         }
     }
 

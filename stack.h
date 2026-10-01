@@ -2,7 +2,7 @@
 void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln);
 
 //-------------------------------------------------------------------------------------
-int stkvrf(stack_t* Stk, str prvfnc, size_t defcpty_ONLYFORSTKCTOR = 0);
+int stkvrf(stack_t* Stk, str prvfnc);
 
 //-------------------------------------------------------------------------------------
 void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln);
