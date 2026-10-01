@@ -34,7 +34,7 @@ str const FNCNMS[] = {
 
 const int NFNCS = 10;
 
-str dmpsep = "//-------------------------------------------------------------------------------------";
+str dmpsep = "\n-----------------------------------------------------------------------------------------\n";
 
 
 struct stack_t {
@@ -85,8 +85,8 @@ enum _errt
 void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
     SEP
-    LOG("Dump was called by error handler from function " GREEN "%s.\n" DEF, _frmfnc);
-    LOG(GREEN "\"%s\"" DEF " created in file " GREEN "%s" DEF " in " GREEN "%s" DEF " on line " GREEN "%d.\n" DEF,
+    LOG("Dump was called by error handler from function " RED "%s" DEF ".\n", _frmfnc);
+    LOG(RED "\"%s\"" DEF " created in file " RED "%s" DEF " in " RED "%s" DEF " on line " RED "%d" DEF ".\n",
               Stk->_nm,                              Stk->_brnfl,          Stk->_brnfnc,               Stk->_brnln);
 
 
@@ -100,7 +100,7 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
     LOG("Capacity = %zu. ", Stk->cpty);
     LOG("Size = %zu. ", Stk->sz);
     LOG("Buffer adress = [%p]. \n", Stk->bffr);
-    NLN
+    NLN NLN
     size_t i = 0;
     for (i = 0; i < Stk->sz; i++){
 
@@ -183,29 +183,36 @@ enum _errt
     STKBUFUNDRFLW = 7
 };
 */
+
+
+#define END fprintf(stderr, RED FAT "================================================================================ YASHA PIDORAS ================================================================================\n" DEF);
+#define ERRLOG(format, ...) fprintf(stderr, format, __VA_ARGS__);
+#define FRMT2 "=========================================================="
 void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln) {
 
     switch (err)
     {
         case WRONGFUNCCALL: //WRONG FUNCTION CALLED VERIFICATOR
         {
-            fprintf(stderr, RED "==================================CRITICAL FATAL PANIC UNRECOVERABLE ERROR: Verifier was called from function \"%s\", that has no acces to сall.==================================\n" DEF, _prvfnc);
-
+            ERRLOG(RED FAT FRMT2 " CRITICAL FATAL PANIC UNRECOVERABLE ERROR 1: WRONGFUNCCALL %s" FRMT2 "\n" DEF, "");
+            ERRLOG("Verifier was called from function \"%s\", that has no acces to сall. Last stack call was in %s:%d in function %s.\n",
+                                                        _prvfnc,                                                _fl, _nln,          _fnc);
             //stkdtor(Stk, "", "", 0); //СДЕЛАТЬ ПО МАКРОССУ STDERR (CМ DTOR)
-
+            END
             abort();
             break;
         }
 
         case STRUCTNULLPTR: //STRUCTURE HAS NULL POINTER
         {
-            fprintf(stderr, RED FAT "CRITICAL FATAL PANIC UNRECOVERABLE ERROR: NULL was passed as a pointer to the structure.\n" DEF);
-            fprintf(stderr, RED "Last stack call was in %s:%d in function %s.\n" DEF,
-                                                       _fl, _nln,        _fnc);
+            ERRLOG(RED FAT FRMT2 " CRITICAL FATAL PANIC UNRECOVERABLE ERROR 2: STRUCTNULLPTR %s" FRMT2 "\n" DEF, "");
+            ERRLOG("NULL was passed as a pointer to the structure. Last stack call was in %s:%d in function %s.\n",
+                                                                                        _fl, _nln,          _fnc);
             //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
             //putc('\n', stderr);
 
             //stkdtor(Stk, "", "", 0);
+            END
 
             abort();
             break;
@@ -226,23 +233,25 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 
         }
 
+        case 6: //STACKBUFFEROVERFLOW
+        {
+
+        }
+
         case STKBUFUNDRFLW: //STACKBUFFERUNDERFLOW
         {
-            fprintf(stderr, RED FAT "====================================================== CRITICAL FATAL PANIC UNRECOVERABLE ERROR: Stack buffer underflow. ======================================================\n" DEF);
-            fprintf(stderr, RED "Last stack call was in %s:%d in function %s.\n" DEF,
-                                                       _fl, _nln,        _fnc);
+            ERRLOG(RED FAT FRMT2 " CRITICAL FATAL PANIC UNRECOVERABLE ERROR 7: STKBUFUNDRFLW %s" FRMT2 "\n" DEF, "");
+            ERRLOG("Stack buffer underflow. Last stack call was in %s:%d in function %s.\n" DEF,
+                                                                   _fl, _nln,        _fnc);
+            //putc('\n', stderr);
             stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
-            putc('\n', stderr);
+
+            END
 
             stkdtor(Stk, "", "", 0);
 
             abort();
             break;
-        }
-
-        case 6: //STACKBUFFEROVERFLOW
-        {
-
         }
 
         default: {}

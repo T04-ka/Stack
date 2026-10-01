@@ -5,9 +5,14 @@
 //-------------------------------------------------------------------------------------
 int main(){
 
-    stack_t Stk = {};
+    stack_t Stk1 = {};
+    stack_t* Stk = &Stk1;
+    stkctor(Stk, "Stk", __FILE__, __FUNCTION__, __LINE__); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
 
-    stkctor(&Stk, "Stk", __FILE__, __FUNCTION__, __LINE__);
+    //ERR 1 TEST
+    // str _fl = __FILE__, _fnc = __FUNCTION__;
+    // int _nln = __LINE__;
+    // STACK_OK
 
     char cmd = 0;
     int n = 0;
@@ -23,7 +28,7 @@ int main(){
 
             case 'r':
             {
-                stkpop(&Stk, &n, __FILE__, __FUNCTION__, __LINE__);
+                stkpop(Stk, &n, __FILE__, __FUNCTION__, __LINE__);
                 printf("Poped: %d\n", n);
                 //stkdmp(&Stk, 0);
                 break;
@@ -31,7 +36,7 @@ int main(){
 
             case 'w':
             {
-                stkpush(&Stk, n, __FILE__, __FUNCTION__, __LINE__);
+                stkpush(Stk, n, __FILE__, __FUNCTION__, __LINE__);
                 //stkdmp(&Stk, 0);
                 break;
             }
@@ -39,5 +44,5 @@ int main(){
     }
 
 
-    stkdtor(&Stk, __FILE__, __FUNCTION__, __LINE__);
+    stkdtor(Stk, __FILE__, __FUNCTION__, __LINE__);
 }
