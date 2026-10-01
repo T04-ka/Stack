@@ -14,10 +14,22 @@
 #define FAT "\e[1m"
 #define DEF "\e[0m"
 
+#define HEAD_MXBUFLEN (2<<64 / 8)
 
+#ifndef MXBUFLEN
+#define MXBUFLEN HEAD_MXBUFLEN
+#endif
+
+#ifdef str
+fprintf(stderr, RED FAT "YASHA PIDOR EBANIY\n" DEF);
+abort();
+#endif
 typedef const char* str;
 
+#ifndef stkelm_t
 typedef int stkelm_t;
+#endif
+
 
 str const FNCNMS[] = {
     "void stkdmp(stack_t*, str, str, str, int)",
@@ -61,7 +73,9 @@ enum _errt
     WRONGCPTY     = 4,
     WRONGSZ       = 5,
     STKBUFOVRFLW  = 6,
-    STKBUFUNDRFLW = 7
+    STKBUFUNDRFLW = 7,
+    DEFCPTYEXC    = 8,
+    WRNGMXBFSZDEF = 9
 };
 
 
@@ -131,28 +145,29 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
         }                                   \
     }
 
+#define ISF_STKVRF !strcmp("int stkctor(stack_t*, str, str, str, int, size_t)", prvfnc)
+
 //-------------------------------------------------------------------------------------
-int stkvrf(stack_t* Stk, str prvfnc) {
+int stkvrf(stack_t* Stk, str prvfnc, size_t defcpty_ONLYFORSTKCTOR) {
 
     PRVFNC_OK
 
     if (!prvfnc_ok) {
 
-        return 1; //WRONG PREV FUNCTION CALL
+        return 1; //DONE
     }
 
     if (Stk == NULL) {
 
-        return 2; //NULL POINTER
+        return 2; //DONE
     }
 
-    if (!strcmp("int stkctor(stack_t*, str, str, str, int, size_t)", prvfnc))
+
+    if (ISF_STKVRF) {
+
         return 0;
-
-    if (Stk->bffr == NULL) {
-
-        return 3; //BUFFER NULL POINTER
     }
+
 
     if (Stk->cpty < 1) {
 
@@ -162,6 +177,11 @@ int stkvrf(stack_t* Stk, str prvfnc) {
     if (Stk->sz > Stk->cpty) {
 
         return 5; //WRONG SIZE
+    }
+
+    if (Stk->bffr == NULL) {
+
+        return 3; //BUFFER NULL POINTER
     }
 
     //TODO КАНАРЕЙКИ И ХЭШИ
@@ -180,21 +200,35 @@ enum _errt
     WRONGCPTY     = 4,
     WRONGSZ       = 5,
     STKBUFOVRFLW  = 6,
-    STKBUFUNDRFLW = 7
+    STKBUFUNDRFLW = 7,
+    DEFCPTYEXC    = 8
 };
 */
 
 
 #define END fprintf(stderr, RED FAT "================================================================================ YASHA PIDORAS ================================================================================\n" DEF);
 #define ERRLOG(format, ...) fprintf(stderr, format, __VA_ARGS__);
+
+#define FRMT1 "=========================================================="
 #define FRMT2 "=========================================================="
+#define FRMT3 "==========================================================="
+#define FRMT4 "==========================================================="
+#define FRMT5 "=========================================================="
+#define FRMT6 "==========================================================="
+#define FRMT7 "==========================================================="
+#define FRMT8 "==========================================================="
+#define FRMT9 "==========================================================="
+
+#define ERRMSG(N) PRNTERRMSG(N, (_errt) N)
+#define PRNTERRMSG(N, ERR) ERRLOG(RED FAT FRMT##N " CRITICAL FATAL PANIC UNRECOVERABLE ERROR " #N ":" #ERR " %s" FRMT##N "\n" DEF, "");
+
 void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln) {
 
     switch (err)
     {
         case WRONGFUNCCALL: //WRONG FUNCTION CALLED VERIFICATOR
         {
-            ERRLOG(RED FAT FRMT2 " CRITICAL FATAL PANIC UNRECOVERABLE ERROR 1: WRONGFUNCCALL %s" FRMT2 "\n" DEF, "");
+            ERRMSG(1);
             ERRLOG("Verifier was called from function \"%s\", that has no acces to сall. Last stack call was in %s:%d in function %s.\n",
                                                         _prvfnc,                                                _fl, _nln,          _fnc);
             //stkdtor(Stk, "", "", 0); //СДЕЛАТЬ ПО МАКРОССУ STDERR (CМ DTOR)
@@ -205,7 +239,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 
         case STRUCTNULLPTR: //STRUCTURE HAS NULL POINTER
         {
-            ERRLOG(RED FAT FRMT2 " CRITICAL FATAL PANIC UNRECOVERABLE ERROR 2: STRUCTNULLPTR %s" FRMT2 "\n" DEF, "");
+            ERRMSG(2);
             ERRLOG("NULL was passed as a pointer to the structure. Last stack call was in %s:%d in function %s.\n",
                                                                                         _fl, _nln,          _fnc);
             //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
@@ -240,7 +274,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 
         case STKBUFUNDRFLW: //STACKBUFFERUNDERFLOW
         {
-            ERRLOG(RED FAT FRMT2 " CRITICAL FATAL PANIC UNRECOVERABLE ERROR 7: STKBUFUNDRFLW %s" FRMT2 "\n" DEF, "");
+            ERRMSG(7);
             ERRLOG("Stack buffer underflow. Last stack call was in %s:%d in function %s.\n" DEF,
                                                                    _fl, _nln,        _fnc);
             //putc('\n', stderr);
@@ -254,11 +288,46 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
+        case DEFCPTYEXC:
+        {
+            ERRLOG(RED FAT FRMT8 " CRITICAL FATAL PANIC UNRECOVERABLE ERROR 8: DEFCPTYEXC %s" FRMT8 "\n" DEF, "");
+            ERRLOG("An attempt to create an array that is too large. Max stack buffer len: " FAT RED "%zu" DEF ". Given capacity: " FAT RED "%zu" DEF". Last stack call was in %s:%d in function %s.\n" DEF,
+                                                                                        (size_t) MXBUFLEN,             Stk->cpty,                 _fl, _nln,        _fnc);
+
+            END
+
+            abort();
+            break;
+        }
+
+        case WRNGMXBFSZDEF:
+        {
+            ERRMSG(9);
+            ERRLOG("An attempt to create an array that is too large. Max stack buffer len: " FAT RED "%zu" DEF ". Given capacity: " FAT RED "%zu" DEF". Last stack call was in %s:%d in function %s.\n" DEF,
+                                                                                        (size_t) MXBUFLEN,             Stk->cpty,                 _fl, _nln,        _fnc);
+
+            END
+
+            abort();
+            break;
+        }
+
         default: {}
     }
 
 }
 
+#undef END
+#undef ERRLOG
+#undef FRMT1
+#undef FRMT2
+#undef FRMT3
+#undef FRMT4
+#undef FRMT5
+#undef FRMT6
+#undef FRMT7
+#undef FRMT8
+#undef FRMT9
 
 //-------------------------------------------------------------------------------------
 int stkpush(stack_t* Stk, int var, str _fl, str _fnc, int _nln){
@@ -286,7 +355,7 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
     if (Stk->sz == 0) {
 
         stkerrhnd(Stk, STKBUFUNDRFLW, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-        return 7; //TODO STCKUNDERFLOW
+        return 7;
     }
 
     Stk->sz --;
@@ -306,7 +375,9 @@ int stkgrow(stack_t* Stk, str _fl, str _fnc, int _nln) {
 
     STACK_OK
 
-    Stk->bffr = (stkelm_t*) realloc(Stk->bffr, 2 * (Stk->cpty) * sizeof((Stk->bffr)[0]));
+    stkelm_t* tmpbf = (stkelm_t*) realloc(Stk->bffr, 2 * (Stk->cpty) * sizeof((Stk->bffr)[0]));
+
+    Stk->bffr = tmpbf;
 
     Stk->cpty *= 2;
 
@@ -330,12 +401,31 @@ int stkshrnk(stack_t *Stk, str _fl, str _fnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
+#define ERRHNDLRCL stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln); \
+                   return err;
+
 int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t defcpty){
+
 
     STACK_OK
 
-    Stk->bffr = (stkelm_t*) calloc(defcpty, sizeof(int));
+    if (MXBUFLEN > HEAD_MXBUFLEN) {
+
+        err = 9;
+        ERRHNDLRCL
+    }
+
     Stk->cpty = defcpty;
+
+    if (defcpty > MXBUFLEN) {
+
+        err = 8;
+        ERRHNDLRCL
+
+    }
+
+    Stk->bffr = (stkelm_t*) calloc(defcpty, sizeof(int));
+
     Stk->sz = 0;
 
     //ifdef
@@ -349,9 +439,11 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     stkpzn(Stk, _fl, _fnc, _nln);
 
+
     return 0;
 }
 
+#undef ERRHNDLRCL
 
 //-------------------------------------------------------------------------------------
 int stkdtor(stack_t* Stk, str _fl, str _fnc, int _nln){

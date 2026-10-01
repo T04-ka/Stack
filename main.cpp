@@ -1,7 +1,9 @@
+#define MXBUFLEN 2
+
 #include "stack.cpp"
 
 
-//TODO сделать __VA_ARGS__
+//size_t BIGNUM = (size_t) (1u << 64) - 1u;
 //-------------------------------------------------------------------------------------
 int main(){
 
@@ -15,7 +17,7 @@ int main(){
     // STACK_OK
 
     char cmd = 0;
-    int n = 0;
+    int n = 0; //TODO СДЕЛАТЬ NULL POINTER n
     //printf(__PRETTY_FUNCTION__);
     //stkerrhnd((_errt) stkvrf(&Stk, __PRETTY_FUNCTION__), __PRETTY_FUNCTION__);
 
