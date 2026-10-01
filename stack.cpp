@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <system_error>
 
 #define RED "\e[31m"
 #define BLUE "\e[34m"
@@ -73,22 +74,29 @@ enum _errt
     STK_MALLOC_FAILED            = 6,
     STK_BUFFER_UNDERFLOW         = 7,
     STK_DEFINED_CPTY_EXCESS      = 8,
-    STK_WRONG_MXBFFRSZ_DEFINED   = 9
+    STK_WRONG_MXBFFRSZ_DEFINED   = 9,
+    STK_POP_RECIEVER_NULLPTR     = 10
 };
 
 
 #include "stack.h"
 
-#define STACK_DUMP(STKPTR) stkdmp(STKPTR, __PRETTY_FUNCTION__, __FILE__, __FUNCTION__, __LINE__);
+#define STACK_DUMP(STKNM) stkdmp(&STKNM, __PRETTY_FUNCTION__, __FILE__, __FUNCTION__, __LINE__);
+#define STACK_CTOR(STKNM, ...) stkctor(&STKNM, #STKNM, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__);
 
 
 #define PZN 69
 
 //-------------------------------------------------------------------------------------
 
-#define STACK_OK                                                            \
-    int err = stkvrf(Stk, __PRETTY_FUNCTION__);                             \
+#define STACK_OK                                                                                \
+    int err = stkvrf(Stk, __PRETTY_FUNCTION__);                                                 \
     stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+
+
+//-------------------------------------------------------------------------------------
+#define ERROR_HANDLER_CALL  stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);  \
+                            return err;
 
 
 //-------------------------------------------------------------------------------------
@@ -237,6 +245,7 @@ enum _errt
 #define FRMT7 "======================================================="
 #define FRMT8 "==========================================================="
 #define FRMT9 "====================================================="
+#define FRMT10 "===================================================="
 
 #define PRNTERRMSG(N, ERR) ERRLOG(RED FAT FRMT##N " CRITICAL FATAL PANIC UNRECOVERABLE ERROR " #N ": " #ERR " %s" FRMT##N "\n\n" DEF, "");
 
@@ -263,7 +272,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
         case STK_STRUCT_NULLPTR: //STRUCTURE HAS NULL POINTER
         {
             PRNTERRMSG(2, STK_STRUCT_NULLPTR);
-            ERRLOG("NULL was passed as a pointer to the structure.%s", "");
+            ERRLOG("For some reason, NULL was passed as a pointer to the structure.%s", "");
             PRINT_WHERE_FROM_CALLED
 
             END
@@ -275,7 +284,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
         case STK_BUFFER_NULLPTR: //STACK BUFFER HAS NULL POINTER
         {
             PRNTERRMSG(3, STK_BUFFER_NULLPTR);
-            ERRLOG("The pointer to the buffer turned out to be NULL.%s", "");
+            ERRLOG("For some reason, the pointer to the buffer turned out to be NULL.%s", "");
             PRINT_WHERE_FROM_CALLED
 
             stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
@@ -373,9 +382,9 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case STK_WRONG_MXBFFRSZ_DEFINED :
+        case STK_WRONG_MXBFFRSZ_DEFINED:
         {
-            PRNTERRMSG(9, STK_WRONG_MXBFFRSZ_DEFINED );
+            PRNTERRMSG(9, STK_WRONG_MXBFFRSZ_DEFINED);
             ERRLOG("Bad attempt to define STK_MXBFFRSZ. STK_MXBFFRSZ defined as " FAT "%zu" DEF ", which is too large.",
                                                                                         STK_MXBFFRSZ);
 
@@ -384,6 +393,22 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             abort();
             break;
         }
+
+        case STK_POP_RECIEVER_NULLPTR:
+        {
+            PRNTERRMSG(10, STK_POP_RECIEVER_NULLPTR);
+            ERRLOG("For some reason, NULL was passed as a pointer to the poped value reciever.%s", "");
+            PRINT_WHERE_FROM_CALLED
+
+            stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+            stkdtor(Stk, _fl, _fnc, _nln);
+
+            END
+
+            abort();
+            break;
+        }
+
 
         default: {}
     }
@@ -401,6 +426,8 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 #undef FRMT7
 #undef FRMT8
 #undef FRMT9
+#undef FRMT10
+
 
 //-------------------------------------------------------------------------------------
 int stkpush(stack_t* Stk, int var, str _fl, str _fnc, int _nln){
@@ -425,10 +452,16 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
 
     STACK_OK
 
+    if (var == NULL) {
+
+        err = 10;
+        ERROR_HANDLER_CALL
+    }
+
     if (Stk->sz == 0) {
 
-        stkerrhnd(Stk, STK_BUFFER_UNDERFLOW, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-        return 7;
+        err = 7;
+        ERROR_HANDLER_CALL
     }
 
     Stk->sz --;
@@ -453,8 +486,7 @@ int stkgrow(stack_t* Stk, str _fl, str _fnc, int _nln) {
     if (tmpbf == NULL) {
 
         err = 6;
-        stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-        return err;
+        ERROR_HANDLER_CALL
     }
 
     Stk->bffr = tmpbf;
@@ -478,8 +510,7 @@ int stkshrnk(stack_t *Stk, str _fl, str _fnc, int _nln){
     if (tmpbf == NULL) {
 
         err = 6;
-        stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-        return err;
+        ERROR_HANDLER_CALL
     }
 
     Stk->bffr = tmpbf;
@@ -490,8 +521,6 @@ int stkshrnk(stack_t *Stk, str _fl, str _fnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-#define ERROR_HANDLER_CALL stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln); \
-                   return err;
 
 int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t defcpty){
 
@@ -532,7 +561,6 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
     return 0;
 }
 
-#undef ERRHNDLRCL
 
 //-------------------------------------------------------------------------------------
 int stkdtor(stack_t* Stk, str _fl, str _fnc, int _nln){

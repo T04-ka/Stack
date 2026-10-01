@@ -7,9 +7,13 @@ int main(){
 
     stack_t Stk1 = {};
     stack_t* Stk = &Stk1;
-    stkctor(Stk, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
-    STACK_DUMP(Stk);
+
+    STACK_CTOR(Stk1, 5);
+
     //stkctor(NULL, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
+
+    STACK_DUMP(Stk1); //ВЫЗОВИ ДАМП ДО CTORA И ЧЕКНИ ЧТО БУДЕТ
+
 
     //ERR 1 TEST
     // str _fl = __FILE__, _fnc = __FUNCTION__;
@@ -33,7 +37,7 @@ int main(){
 
             case 'r':
             {
-                stkpop(Stk, &n, __FILE__, __FUNCTION__, __LINE__);
+                stkpop(Stk, NULL, __FILE__, __FUNCTION__, __LINE__);
                 printf("Poped: %d\n", n);
                 //stkdmp(&Stk, 0);
                 break;
