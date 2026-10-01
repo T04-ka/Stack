@@ -217,7 +217,7 @@ enum _errt
 #define FRMT2 "======================================================="
 #define FRMT3 "========================================================="
 #define FRMT4 "========================================================="
-#define FRMT5 "=========================================================="
+#define FRMT5 "==========================================================="
 #define FRMT6 "==========================================================="
 #define FRMT7 "========================================================="
 #define FRMT8 "==========================================================="
@@ -259,7 +259,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case 3: //STACK BUFFER HAS NULL POINTER
+        case STK_BUF_NULLPTR: //STACK BUFFER HAS NULL POINTER
         {
             PRNTERRMSG(3, STK_BUF_NULLPTR);
             ERRLOG("The pointer to the buffer turned out to be NULL.%s", "");
@@ -274,10 +274,10 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case 4: //CAPACITY HAS WRONG VALUE
+        case STK_WRONG_CPTY: //CAPACITY HAS WRONG VALUE
         {
             PRNTERRMSG(4, STK_WRONG_CPTY);
-            ERRLOG("For some reason, capacity has wrong value: " FAT "%zu" DEF ". In particular, it's larger than maximum size of stack buffer: " FAT"%zu" DEF".", Stk->cpty, STK_MXBUFSZ);
+            ERRLOG("For some reason, stack buffer capacity has wrong value: " FAT "%zu" DEF ". In particular, it's larger than maximum size of stack buffer: " FAT"%zu" DEF".", Stk->cpty, STK_MXBUFSZ);
             PRINT_WHERE_FROM_CALLED
 
             //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
@@ -290,9 +290,21 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
-        case 5: //SIZE HAS WRONG VALUE
+        case STK_WRONG_SZ: //SIZE HAS WRONG VALUE
         {
+            PRNTERRMSG(5, STK_WRONG_SZ);
+            ERRLOG("For some reason, size of filled stack buffer has wrong value: " FAT "%zu" DEF ". In particular, it's larger than current stack buffer capacity: " FAT"%zu" DEF".",
+                                                                                      Stk->sz,                                                                  Stk->cpty);
+            PRINT_WHERE_FROM_CALLED
 
+            //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
+            //putc('\n', stderr);
+
+            //stkdtor(Stk, "", "", 0);
+            END
+
+            abort();
+            break;
         }
 
         case 6: //STACKBUFFEROVERFLOW
