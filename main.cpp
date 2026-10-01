@@ -1,6 +1,3 @@
-#define STK_MXBUFSZ 1000
-
-
 #include "stack.cpp"
 
 
@@ -22,6 +19,7 @@ int main(){
     //printf(__PRETTY_FUNCTION__);
     //stkerrhnd((_errt) stkvrf(&Stk, __PRETTY_FUNCTION__), __PRETTY_FUNCTION__);
 
+    Stk1.bffr = NULL;
 
     while (cmd != 'e') {
 
