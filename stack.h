@@ -1,11 +1,11 @@
 //-------------------------------------------------------------------------------------
-void stkdmp(stack_t* Stk, int err, str _fnc, str _fl, str _frmfnc, int _nln, str stknm);
+void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln);
 
 //-------------------------------------------------------------------------------------
 int stkvrf(stack_t* Stk, str prvfnc);
 
 //-------------------------------------------------------------------------------------
-void stkerrhnd(_errt err, str prvfnc);
+void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln);
 
 //-------------------------------------------------------------------------------------
 int stkpush(stack_t* Stk, int var, str _fl, str _frmfnc, int _nln);
