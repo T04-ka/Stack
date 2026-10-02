@@ -20,11 +20,6 @@
 #define STK_MXBFFRSZ STK_HEAD_MXBFFRSZ
 #endif
 
-#ifdef str
-fprintf(stderr, RED FAT "YASHA PIDOR EBANIY\n" DEF);
-abort();
-#endif
-
 typedef const char* str;
 
 #ifndef stkelm_t
@@ -47,19 +42,18 @@ str const FNCNMS[] = {
 
 const int NFNCS = 10;
 
-
+//TODO: СДЕЛАТЬ ПОД УСЛОВНУЮ КОМПИЛЯЦИЮ ПЕРЕДАЧУ ФУНКЦИЙ
 struct stack_t {
     stkelm_t* bffr;
     size_t cpty;
     size_t sz;
 
-    //ifdef
+
     str _tp;
     str _nm;
     str _brnfl;
     str _brnfnc;
     int _brnln;
-    FILE* _logfl;
 };
 
 
@@ -408,6 +402,8 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 #undef ERRMSG9
 #undef ERRMSG10
 
+#else
+void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln) {}
 #endif
 
 
@@ -513,15 +509,12 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     STACK_OK
 
-    #ifdef STK_SANITIZE
     Stk->_tp = "int";
     Stk->_nm = _nm;
     Stk->_brnfl = _fl;
     Stk->_brnfnc = _fnc;
     Stk->_brnln = _nln;
 
-
-    #endif
 
     //printf("read: %zu, head: %zu", STK_MXBFFRSZ, STK_HEAD_MXBFFRSZ);
     if (STK_MXBFFRSZ > STK_HEAD_MXBFFRSZ) {
@@ -559,15 +552,12 @@ int stkdtor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln){
     Stk->cpty =  -1u;
     Stk->sz = -1u;
 
-    #ifdef STK_SANITIZE
     Stk->_brnfl = "DED_LOH";
     Stk->_brnfnc = "DED_LOH";
     Stk->_brnln = -1;
 
     #ifndef STK_SANITIZE_LOUD
     fclose(logfl);
-    #endif
-
     #endif
 
     return 0;

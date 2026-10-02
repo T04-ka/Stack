@@ -1,10 +1,9 @@
-#define STK_SANITIZE
+//#define STK_SANITIZE
 //#define STK_SANITIZE_LOUD
-#define STK_HANDLER_ABORT
+//#define STK_HANDLER_ABORT
 #include "stack.cpp"
 
-
-//size_t BIGNUM = (size_t) (1u << 64) - 1u;
+// PIPE
 //-------------------------------------------------------------------------------------
 int main(){
 
