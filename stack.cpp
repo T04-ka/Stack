@@ -54,7 +54,13 @@ struct stack_t {
     str _brnfnc;
     int _brnln;
 
+    #ifndef STK_NOCHECK_STRUCT_HASH
     int _strcthsh;
+    #endif
+
+    #ifdef STK_CHECK_BUFFER_HASH
+    int _bffrhsh;
+    #endif
 };
 
 
@@ -75,6 +81,14 @@ enum _errt
     #ifndef STK_NOCHECK_STRUCT_HASH
     STK_WRONG_STRUCT_HASH        = 11
     #endif
+
+    #ifdef STK_CHECK_BUFFER_HASH
+    #ifndef STK_NOCHECK_STRUCT_HASH
+    , STK_WRONG_BUFFER_HASH        = 12
+    #else
+    STK_WRONG_BUFFER_HASH        = 12
+    #endif
+    #endif
 };
 
 #ifdef STK_SANITIZE_LOUD
@@ -92,6 +106,7 @@ FILE* logfl = fopen("log.log", "w");
 #define STACK_POP(STKPTR, VARPTR)    stkpop(STKPTR, VARPTR, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 #define STACK_DTOR(STKNM)            stkdtor(&STKNM, #STKNM, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 
+#define $ fprintf(stderr, "ZZZ FROM %s:%d\n", __FILE__, __LINE__);
 
 #define PZN 69
 
@@ -131,12 +146,26 @@ FILE* logfl = fopen("log.log", "w");
     }
 
 
+//-------------------------------------------------------------------------------------
 #ifndef STK_NOCHECK_STRUCT_HASH
+
+#ifdef STK_CHECK_BUFFER_HASH
+#define REWRITE_STRUCT_HASH_VAL Stk->_strcthsh = stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh));
+#else
 #define REWRITE_STRUCT_HASH_VAL Stk->_strcthsh = stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh));
+#endif
+
 #else
 #define REWRITE_STRUCT_HASH_VAL (void) 0;
 #endif
 
+
+//-------------------------------------------------------------------------------------
+#ifdef STK_CHECK_BUFFER_HASH
+#define REWRITE_BUFFER_HASH_VAL Stk->_bffrhsh = stkhsh((void*) Stk->bffr, Stk->cpty * sizeof(*Stk->bffr));
+#else
+#define REWRITE_BUFFER_HASH_VAL (void) 0;
+#endif
 
 //-------------------------------------------------------------------------------------
 #define LOG(format, ...) fprintf(outfl, format, __VA_ARGS__);
@@ -207,13 +236,32 @@ int stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
 
 #ifndef STK_NOCHECK_STRUCT_HASH
+#ifdef STK_CHECK_BUFFER_HASH
+#define STRUCT_HASH_VAL_OK                                                                                          \
+    if (Stk->_strcthsh != stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh))) {     \
+                                                                                                                    \
+        return STK_WRONG_STRUCT_HASH;                                                                               \
+    }
+#else
 #define STRUCT_HASH_VAL_OK                                                                  \
     if (Stk->_strcthsh != stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh))) {     \
                                                                                             \
-        return 11;                                                                          \
+        return STK_WRONG_STRUCT_HASH;                                                       \
     }
+#endif
 #else
 #define STRUCT_HASH_VAL_OK (void) 0
+#endif
+
+
+#ifdef STK_CHECK_BUFFER_HASH
+#define BUFFER_HASH_OK                                                                      \
+    if (Stk->_bffrhsh != stkhsh((void*) Stk->bffr, Stk->cpty * sizeof(*Stk->bffr))) {       \
+                                                                                            \
+        return STK_WRONG_BUFFER_HASH;                                                       \
+}
+#else
+#define BUFFER_HASH_OK (void) 0
 #endif
 
 
@@ -231,10 +279,13 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
         return STK_OK;
     }
-
+    fprintf(stderr, "with buf size = %lu, without = %lu\n", sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh), sizeof(*Stk) - sizeof(Stk->_strcthsh));
+    fprintf(stderr, "aaaa = %d\n", stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh)));
+    fprintf(stderr, "bbbb = %d\n", stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh)));
+    fprintf(stderr, "cccc = %d\n", Stk->_strcthsh);
+    fprintf(stderr, "written = %d, solved = %d\n", Stk->_strcthsh, stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh)));
 
     STRUCT_HASH_VAL_OK;
-
 
     if (Stk->cpty > STK_MXBFFRSZ) {
 
@@ -250,6 +301,8 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
         return STK_BUFFER_NULLPTR;
     }
+
+    BUFFER_HASH_OK;
 
     //TODO КАНАРЕЙКИ И ХЭШИ
 
@@ -277,6 +330,9 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 #ifndef STK_NOCHECK_STRUCT_HASH
 #define FRMT11 "====================================================="
 #endif
+#ifdef STK_CHECK_BUFFER_HASH
+#define FRMT12 "====================================================="
+#endif
 //-------------------------------------------------------------------------------------
 #define ERRMSG1  ERRLOG("Function " FAT "%s" DEF" was called from function " FAT "%s" DEF ", that has no acces to сall.", _prvfnc, _fnc);
 #define ERRMSG2  ERRLOG("For some reason, NULL was passed as a pointer to the structure.%s", "");
@@ -293,6 +349,10 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 #define ERRMSG10 ERRLOG("For some reason, NULL was passed as a pointer to the poped value reciever.%s", "");
 #ifndef STK_NOCHECK_STRUCT_HASH
 #define ERRMSG11 ERRLOG("For some reason, the structure hash changed the value, even though it shouldn't have.%s", "");
+#endif
+
+#ifdef STK_CHECK_BUFFER_HASH
+#define ERRMSG12 ERRLOG("For some reason, the structure buffer hash changed the value, even though it shouldn't have.%s", "");
 #endif
 //-------------------------------------------------------------------------------------
 
@@ -415,6 +475,16 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
         }
         #endif
 
+        #ifdef STK_CHECK_BUFFER_HASH
+        case STK_WRONG_BUFFER_HASH:
+        {
+            PRINT_ERROR_MESSAGE(12, STK_WRONG_BUFFER_HASH);
+            stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+            TOGGLE_ABORT;
+            break;
+        }
+        #endif
+
         default: {}
     }
 
@@ -434,6 +504,9 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 #undef FRMT10
 #ifndef STK_NOCHECK_STRUCT_HASH
 #undef FRMT11
+#ifdef STK_CHECK_BUFFER_HASH
+#undef FRMT12
+#endif
 #endif
 #undef ERRMSG1
 #undef ERRMSG2
@@ -447,6 +520,9 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 #undef ERRMSG10
 #ifndef STK_NOCHECK_STRUCT_HASH
 #undef ERRMSG11
+#endif
+#ifdef STK_CHECK_BUFFER_HASH
+#undef ERRMSG12
 #endif
 
 #else
@@ -468,6 +544,7 @@ int stkpush(stack_t* Stk, int var, str _fl, str _fnc, int _nln){
     Stk->sz ++;
 
     REWRITE_STRUCT_HASH_VAL;
+    REWRITE_BUFFER_HASH_VAL;
 
     return 0;
 }
@@ -494,6 +571,7 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
     *var = *(Stk->bffr + Stk->sz);
 
     REWRITE_STRUCT_HASH_VAL;
+    REWRITE_BUFFER_HASH_VAL;
 
     if (2 * Stk->sz < Stk->cpty && Stk->cpty > 5){
 
@@ -523,6 +601,7 @@ int stkgrow(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
     Stk->cpty *= 2;
 
     REWRITE_STRUCT_HASH_VAL;
+    REWRITE_BUFFER_HASH_VAL;
 
     stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
@@ -551,15 +630,16 @@ int stkshrnk(stack_t *Stk, str _prvfnc, str _fl, str _fnc, int _nln){
     Stk->cpty /= 2;
 
     REWRITE_STRUCT_HASH_VAL;
+    REWRITE_BUFFER_HASH_VAL;
 
     return 0;
 }
 
 
 //-------------------------------------------------------------------------------------
-
 int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t defcpty){
 
+    $;
 
     STACK_OK
 
@@ -573,7 +653,7 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
     //printf("read: %zu, head: %zu", STK_MXBFFRSZ, STK_HEAD_MXBFFRSZ);
     if (STK_MXBFFRSZ > STK_HEAD_MXBFFRSZ) {
 
-        err = 9;
+        err = STK_WRONG_MXBFFRSZ_DEFINED;
         ERROR_HANDLER_CALL
     }
 
@@ -581,7 +661,7 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     if (defcpty > STK_MXBFFRSZ) {
 
-        err = 8;
+        err = STK_DEFINED_CPTY_EXCESS;
         ERROR_HANDLER_CALL
 
     }
@@ -591,6 +671,7 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
     Stk->sz = 0;
 
     REWRITE_STRUCT_HASH_VAL;
+    REWRITE_BUFFER_HASH_VAL;
 
     stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
@@ -611,10 +692,9 @@ int stkdtor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln){
     Stk->_brnfnc = "DED_LOH";
     Stk->_brnln = -1;
 
-
+    #ifndef STK_NOCHECK_STRUCT_HASH
     Stk->_strcthsh = 0;
-
-    REWRITE_STRUCT_HASH_VAL;
+    #endif
 
     #ifndef STK_SANITIZE_LOUD
     fclose(logfl);
@@ -626,9 +706,9 @@ int stkdtor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln){
 
 //-------------------------------------------------------------------------------------
 int stkpzn(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
-
+$;
     PREVFUNC_ACCESS_OK;
-
+$;
     STACK_OK;
 
     for (size_t i = Stk->sz; i < Stk->cpty; i++){
@@ -637,6 +717,8 @@ int stkpzn(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
         }
 
     REWRITE_STRUCT_HASH_VAL;
+
+    REWRITE_BUFFER_HASH_VAL;
 
     return 0;
 

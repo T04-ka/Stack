@@ -2,7 +2,7 @@
 #define STK_SANITIZE_LOUD
 #define STK_HANDLER_ABORT
 //#define STK_NOCHECK_STRUCT_HASH
-//define STK_CHECK_BUFFER_HASH
+#define STK_CHECK_BUFFER_HASH
 #include "stack.cpp"
 
 // PIPE
@@ -15,7 +15,7 @@ int main(){
 
     STACK_CTOR(Stk1, 5);
 
-    Stk1.cpty = 0;
+    //Stk1.cpty = 0;
 
 
     //stkctor(NULL, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
