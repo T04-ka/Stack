@@ -1,0 +1,31 @@
+[31m[1m======================================================= CRITICAL FATAL PANIC UNRECOVERABLE ERROR 2: STK_STRUCT_NULLPTR =======================================================
+
+[0mFor some reason, NULL was passed as a pointer to the structure. Error handler was called from function [1mint stkdmp(stack_t*, str, str, str, int)[0m. Last stack call was in [1mmain.cpp[0m:[1m18[0m in function [1mint main()[0m.
+[31m[1m
+================================================================================ YASHA PIDORAS ================================================================================
+[0m[31m[1m======================================================= CRITICAL FATAL PANIC UNRECOVERABLE ERROR 2: STK_STRUCT_NULLPTR =======================================================
+
+[0mFor some reason, NULL was passed as a pointer to the structure. Error handler was called from function [1mint stkpush(stack_t*, int, str, str, int)[0m. Last stack call was in [1mmain.cpp[0m:[1m49[0m in function [1mint main()[0m.
+[31m[1m
+================================================================================ YASHA PIDORAS ================================================================================
+[0m[31m[1m======================================================= CRITICAL FATAL PANIC UNRECOVERABLE ERROR 2: STK_STRUCT_NULLPTR =======================================================
+
+[0mFor some reason, NULL was passed as a pointer to the structure. Error handler was called from function [1mint stkpush(stack_t*, int, str, str, int)[0m. Last stack call was in [1mmain.cpp[0m:[1m49[0m in function [1mint main()[0m.
+[31m[1m
+================================================================================ YASHA PIDORAS ================================================================================
+[0m[31m[1m======================================================= CRITICAL FATAL PANIC UNRECOVERABLE ERROR 2: STK_STRUCT_NULLPTR =======================================================
+
+[0mFor some reason, NULL was passed as a pointer to the structure. Error handler was called from function [1mint stkpush(stack_t*, int, str, str, int)[0m. Last stack call was in [1mmain.cpp[0m:[1m49[0m in function [1mint main()[0m.
+[31m[1m
+================================================================================ YASHA PIDORAS ================================================================================
+[0m[31m[1m================================================== CRITICAL FATAL PANIC UNRECOVERABLE ERROR 1: STK_WRONG_PREVFUNC_ACCESS ==================================================
+
+[0mFunction [1mint stkvrf(stack_t*, str, str, str, int)[0m was called from function [1mint main()[0m, that has no acces to сall. Error handler was called from function [1mint stkvrf(stack_t*, str, str, str, int)[0m. Last stack call was in [1mmain.cpp[0m:[1m65[0m in function [1mint main()[0m.
+[31m[1m
+================================================================================ YASHA PIDORAS ================================================================================
+[0m[31m[1m================================================== CRITICAL FATAL PANIC UNRECOVERABLE ERROR 1: STK_WRONG_PREVFUNC_ACCESS ==================================================
+
+[0mFunction [1mvoid stkerrhnd(stack_t*, _errt, str, str, str, int)[0m was called from function [1mint main()[0m, that has no acces to сall. Error handler was called from function [1mvoid stkerrhnd(stack_t*, _errt, str, str, str, int)[0m. Last stack call was in [1mmain.cpp[0m:[1m65[0m in function [1mint main()[0m.
+[31m[1m
+================================================================================ YASHA PIDORAS ================================================================================
+[0m

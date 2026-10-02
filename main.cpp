@@ -1,3 +1,6 @@
+#define STK_SANITIZE
+//#define STK_SANITIZE_LOUD
+//#define STK_HANDLER_ABORT
 #include "stack.cpp"
 
 
@@ -6,21 +9,17 @@
 int main(){
 
     stack_t Stk1 = {};
-    stack_t* Stk = &Stk1;
+    stack_t* Stk = NULL;
 
     STACK_CTOR(Stk1, 5);
 
     //stkctor(NULL, "Stk", __FILE__, __FUNCTION__, __LINE__, 5); //TODO СДЕЛАТЬ ПЕРЕДАЧУ ИМЕНИ МАКРОСОМ
 
-    STACK_DUMP(Stk1); //ВЫЗОВИ ДАМП ДО CTORA И ЧЕКНИ ЧТО БУДЕТ
+    STACK_DUMP(Stk); //ВЫЗОВИ ДАМП ДО CTORA И ЧЕКНИ ЧТО БУДЕТ
 
     //stkpzn(Stk, __PRETTY_FUNCTION__, __FILE__, __PRETTY_FUNCTION__, __LINE__);
     //stkshrnk(Stk, __PRETTY_FUNCTION__, __FILE__, __PRETTY_FUNCTION__, __LINE__);
 
-    //ERR 1 TEST
-    // str _fl = __FILE__, _fnc = __FUNCTION__;
-    // int _nln = __LINE__;
-    // STACK_OK
 
     char cmd = 0;
     int n = 0; //TODO СДЕЛАТЬ NULL POINTER n
@@ -39,7 +38,7 @@ int main(){
 
             case 'r':
             {              //ПОМЕНЯТЬ НА NULL
-                stkpop(Stk, &n, __FILE__, __PRETTY_FUNCTION__, __LINE__);
+                STACK_POP(Stk, &n);
                 printf("Poped: %d\n", n);
                 //stkdmp(&Stk, 0);
                 break;
@@ -47,8 +46,14 @@ int main(){
 
             case 'w':
             {
-                stkpush(Stk, n, __FILE__, __PRETTY_FUNCTION__, __LINE__);
+                STACK_PUSH(Stk, n);
                 //stkdmp(&Stk, 0);
+                break;
+            }
+
+            case 'p':
+            {
+                STACK_DUMP(Stk);
                 break;
             }
 
@@ -57,5 +62,5 @@ int main(){
     }
 
 
-    stkdtor(Stk, __FILE__, __PRETTY_FUNCTION__, __LINE__);
+    STACK_DTOR(Stk1);
 }

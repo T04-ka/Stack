@@ -14,6 +14,7 @@
 #define DEF "\e[0m"
 
 #define STK_HEAD_MXBFFRSZ (SIZE_MAX / 8)
+#define MXSTKNM 100
 
 #ifndef STK_MXBFFRSZ
 #define STK_MXBFFRSZ STK_HEAD_MXBFFRSZ
@@ -32,16 +33,16 @@ typedef int stkelm_t;
 
 
 str const FNCNMS[] = {
-    "void stkdmp(stack_t*, str, str, str, int)",
-    "int stkvrf(stack_t*, str)",
-    "void stkerrhnd(stack_t*, _errt, str, str, str, int)",
-    "int stkpush(stack_t*, int, str, str, int)",
-    "int stkpop(stack_t*, int*, str, str, int)",
-    "int stkgrow(stack_t*, str, str, str, int)",
-    "int stkshrnk(stack_t*, str, str, str, int)",
-    "int stkctor(stack_t*, str, str, str, int, size_t)",
-    "int stkdtor(stack_t*, str, str, int)",
-    "int stkpzn(stack_t*, str, str, str, int)"
+        "int stkdmp(stack_t*, str, str, str, int)",
+        "int stkvrf(stack_t*, str, str, str, int)",
+        "void stkerrhnd(stack_t*, _errt, str, str, str, int)",
+        "int stkpush(stack_t*, int, str, str, int)",
+        "int stkpop(stack_t*, int*, str, str, int)",
+        "int stkgrow(stack_t*, str, str, str, int)",
+        "int stkshrnk(stack_t*, str, str, str, int)",
+        "int stkctor(stack_t*, str, str, str, int, size_t)",
+        "int stkdtor(stack_t*, str, str, int)",
+        "int stkpzn(stack_t*, str, str, str, int)"
 };
 
 const int NFNCS = 10;
@@ -77,41 +78,56 @@ enum _errt
     STK_POP_RECIEVER_NULLPTR     = 10
 };
 
+#ifdef STK_SANITIZE_LOUD
+FILE* logfl = stderr;
+#else
+FILE* logfl = fopen("log.log", "w");
+#endif
+
 
 #include "stack.h"
 
-#define STACK_DUMP(STKNM) stkdmp(&STKNM, __PRETTY_FUNCTION__, __FILE__, __PRETTY_FUNCTION__, __LINE__);
-#define STACK_CTOR(STKNM, ...) stkctor(&STKNM, #STKNM, __FILE__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define STACK_DUMP(STKPTR)           stkdmp(STKPTR, __PRETTY_FUNCTION__, __FILE__, __PRETTY_FUNCTION__, __LINE__)
+#define STACK_CTOR(STKNM, ...)       stkctor(&STKNM, #STKNM, __FILE__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define STACK_PUSH(STKPTR, VAR)      stkpush(STKPTR, VAR, __FILE__, __PRETTY_FUNCTION__, __LINE__)
+#define STACK_POP(STKPTR, VARPTR)    stkpop(STKPTR, VARPTR, __FILE__, __PRETTY_FUNCTION__, __LINE__)
+#define STACK_DTOR(STKNM)            stkdtor(&STKNM, #STKNM, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 
 
 #define PZN 69
 
+#ifdef STK_SANITIZE
+#define HANDLER_TOGGLE  stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+#else
+#define HANDLER_TOGGLE void(0)
+#endif
+
 //-------------------------------------------------------------------------------------
 
 #define STACK_OK                                                                                \
-    int err = stkvrf(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);                                                 \
-    stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+    int err = stkvrf(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);                                \
+    HANDLER_TOGGLE;                                                                             \
+    if (err) return err;
 
 
 //-------------------------------------------------------------------------------------
-#define ERROR_HANDLER_CALL  stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);  \
+#define ERROR_HANDLER_CALL  HANDLER_TOGGLE; \
                             return err;
 
 
 //-------------------------------------------------------------------------------------
 // //printf("strcmp(%s, %s) = %d\n", __PRETTY_FUNCTION__, FNCNMS[i], strcmp(__PRETTY_FUNCTION__, FNCNMS[i]));
-#define PREVFUNC_ACCESS_OK                                                  \
-    int prvfnc_ok = 0;                                                      \
-    for (int i = 0; i < NFNCS; i++) {                                       \
-        printf("strcmp(%s, %s) = %d\n", _prvfnc, FNCNMS[i], strcmp(_prvfnc, FNCNMS[i])); \
-        if (!strcmp(_prvfnc, FNCNMS[i])) {                                 \
-                                                                            \
-            prvfnc_ok = 1;                                                  \
-            break;                                                          \
-        }                                                                   \
-    }                                                                       \
-    if (!prvfnc_ok) {                                                       \
-                                                                            \
+#define PREVFUNC_ACCESS_OK                                                                  \
+    int prvfnc_ok = 0;                                                                      \
+    for (int i = 0; i < NFNCS; i++) {                                                       \
+        if (!strcmp(_prvfnc, FNCNMS[i])) {                                                  \
+                                                                                            \
+            prvfnc_ok = 1;                                                                  \
+            break;                                                                          \
+        }                                                                                   \
+    }                                                                                       \
+    if (!prvfnc_ok) {                                                                       \
+                                                                                            \
         stkerrhnd(Stk, STK_WRONG_PREVFUNC_ACCESS,  __PRETTY_FUNCTION__, _fl, _fnc, _nln);   \
     }
 
@@ -120,27 +136,25 @@ enum _errt
 #define LOG(format, ...) fprintf(outfl, format, __VA_ARGS__);
 #define SEP fprintf(Stk->_logfl, "\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 #define NLN putc('\n', Stk->_logfl);
-#define IF_CALLEDFUNCTION_STKERRHND if (!strcmp("void stkerrhnd(stack_t*, _errt, str, str, str, int)", _frmfnc))
+#define IF_CALLEDFUNCTION_STKERRHND if (!strcmp(FNCNMS[2], _frmfnc))
 
-void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
+int stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
     FILE* outfl = stderr;
 
     IF_CALLEDFUNCTION_STKERRHND {
 
-        outfl = stderr;
-
-        SEP
+        outfl = Stk->_logfl;
+        SEP;
         LOG("Dump was called by error handler. %s", "");
     }
     else {
 
-        STACK_OK
+        STACK_OK;
 
-        outfl = Stk->_logfl;
-
-        SEP
-        LOG("Dump was called from function " FAT "%s" FAT ". ", _frmfnc);
+        outfl = stdout;
+        SEP;
+        LOG("Dump was called from function " FAT "%s" DEF ", exactly from " FAT"%s:%d" DEF". ", _frmfnc, _fl, _nln);
     }
 
 
@@ -156,10 +170,11 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
     if (Stk->bffr == NULL) {
 
-        return;
+        return STK_BUFFER_NULLPTR;
     }
 
-    NLN NLN
+    NLN;
+    NLN;
     size_t i = 0;
     for (i = 0; i < Stk->sz; i++){
 
@@ -170,18 +185,19 @@ void stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
         LOG("\t[%zu] = %d (PZN)\n", i, PZN);
     }
-    NLN
-    SEP
+    NLN;
+    SEP;
+
+    return 0;
 }
 
 #undef LOG
+#undef SEP
+#undef NLN
 
 
 //-------------------------------------------------------------------------------------
-//printf("strcmp(%s, %s) = %d\n", prvfnc, FNCNMS[i], strcmp(prvfnc, FNCNMS[i]));
-
-
-#define IS_FUNCTION_STKCDTOR !strcmp("int stkctor(stack_t*, str, str, str, int, size_t)", _prvfnc) || !strcmp("int stkdtor(stack_t*, str, str, int)", prvfnc)
+#define IS_FUNCTION_STKCDTOR !strcmp(FNCNMS[7], _prvfnc) || !strcmp(FNCNMS[8], _prvfnc)
 
 int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
@@ -220,26 +236,14 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
     return 0;
 }
 
-#undef PRVFNC_OK
-/*
-enum _errt
-{
-    OK            = 0,
-    STK_WRONG_FUNC_CALLED_STKVRF = 1,
-    STK_STRUCT_NULLPTR = 2,
-    STK_BUFFER_NULLPTR = 3,
-    WRONGCPTY     = 4,
-    WRONGSZ       = 5,
-    STK_BUFFER_UNDRFLW  = 6,
-    STK_BUFFER_UNDRFLW = 7,
-    STK_DEF_CPTY_EXC    = 8
-};
-*/
+
+#ifdef STK_SANITIZE
+//-------------------------------------------------------------------------------------
+#define PRINT_END_MESSAGE fprintf(logfl, RED FAT "\n================================================================================ YASHA PIDORAS ================================================================================\n" DEF);
+
+#define ERRLOG(format, ...) fprintf(logfl, format, __VA_ARGS__);
 
 //-------------------------------------------------------------------------------------
-#define PRINT_END_MESSAGE fprintf(stderr, RED FAT "\n================================================================================ YASHA PIDORAS ================================================================================\n" DEF);
-#define ERRLOG(format, ...) fprintf(stderr, format, __VA_ARGS__);
-
 #define FRMT1 "=================================================="
 #define FRMT2 "======================================================="
 #define FRMT3 "======================================================="
@@ -250,12 +254,43 @@ enum _errt
 #define FRMT8 "==========================================================="
 #define FRMT9 "====================================================="
 #define FRMT10 "===================================================="
-
-#define PRINT_START_MESSAGE(N, ERR) ERRLOG(RED FAT FRMT##N " CRITICAL FATAL PANIC UNRECOVERABLE ERROR " #N ": " #ERR " %s" FRMT##N "\n\n" DEF, "");
+//-------------------------------------------------------------------------------------
+#define ERRMSG1  ERRLOG("Function " FAT "%s" DEF" was called from function " FAT "%s" DEF ", that has no acces to сall.", _prvfnc, _fnc);
+#define ERRMSG2  ERRLOG("For some reason, NULL was passed as a pointer to the structure.%s", "");
+#define ERRMSG3  ERRLOG("For some reason, the pointer to the buffer turned out to be NULL.%s", "");
+#define ERRMSG4  ERRLOG("For some reason, stack buffer capacity has wrong value: " FAT "%zu" DEF ". In particular, it's larger than maximum size of stack buffer: " FAT"%zu" DEF".", Stk->cpty, STK_MXBFFRSZ);
+#define ERRMSG5  ERRLOG("For some reason, size of filled stack buffer has wrong value: " FAT "%zu" DEF ". In particular, it's larger than current stack buffer capacity: " FAT"%zu" DEF".", \
+                                                                                        Stk->sz,                                                                             Stk->cpty);
+#define ERRMSG6  ERRLOG("For some reason, memory allocation in function " FAT"%s" DEF" failed.", _prvfnc);
+#define ERRMSG7  ERRLOG("Stack buffer underflow.%s", "");
+#define ERRMSG8  ERRLOG("An attempt to create an array that is too large. Max stack buffer len: " FAT "%zu" DEF ". Given capacity: " FAT "%zu" DEF".", \
+                                                                                    STK_MXBFFRSZ,                       Stk->cpty);
+#define ERRMSG9  ERRLOG("Bad attempt to define STK_MXBFFRSZ. STK_MXBFFRSZ defined as " FAT "%zu" DEF ", which is too large.", \
+                                                                            STK_MXBFFRSZ);
+#define ERRMSG10 ERRLOG("For some reason, NULL was passed as a pointer to the poped value reciever.%s", "");
+//-------------------------------------------------------------------------------------
 
 #define PRINT_WHERE_FROM_CALLED ERRLOG(" Error handler was called from function " FAT"%s" DEF". Last stack call was in " FAT"%s" DEF":" FAT"%d" DEF" in function " FAT"%s" DEF".\n", _prvfnc, _fl, _nln, _fnc);
 
+//-------------------------------------------------------------------------------------
+#define PRINT_ERROR_MESSAGE(N, ERR)                                                                                 \
+    ERRLOG(RED FAT FRMT##N " CRITICAL FATAL PANIC UNRECOVERABLE ERROR " #N ": " #ERR " %s" FRMT##N "\n\n" DEF, ""); \
+    ERRMSG##N                                                                                                       \
+    PRINT_WHERE_FROM_CALLED                                                                                         \
+    PRINT_END_MESSAGE                                                                                               \
+
+
+//-------------------------------------------------------------------------------------
+#ifdef STK_HANDLER_ABORT
+#define TOGGLE_ABORT abort()
+#else
+#define TOGGLE_ABORT (void) 0
+#endif
+
+
 void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln) {
+
+    PREVFUNC_ACCESS_OK
 
     switch (err)
     {
@@ -266,155 +301,75 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 
         case STK_WRONG_PREVFUNC_ACCESS://WRONG FUNCTION CALLED VERIFICATOR
         {
-            PRINT_START_MESSAGE(1, STK_WRONG_PREVFUNC_ACCESS);
-            ERRLOG("Function " FAT "%s" DEF" was called from function " FAT "%s" DEF ", that has no acces to сall.", _prvfnc, _fnc);
-            PRINT_WHERE_FROM_CALLED
-
-            PRINT_END_MESSAGE
-
-            stkdtor(Stk, "", "", 0);
-
-            abort();
+            PRINT_ERROR_MESSAGE(1, STK_WRONG_PREVFUNC_ACCESS);
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_STRUCT_NULLPTR: //STRUCTURE HAS NULL POINTER
         {
-            PRINT_START_MESSAGE(2, STK_STRUCT_NULLPTR);
-            ERRLOG("For some reason, NULL was passed as a pointer to the structure.%s", "");
-            PRINT_WHERE_FROM_CALLED
-
-            PRINT_END_MESSAGE
-
-            abort();
+            PRINT_ERROR_MESSAGE(2, STK_STRUCT_NULLPTR);
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_BUFFER_NULLPTR: //STACK BUFFER HAS NULL POINTER
         {
-            PRINT_START_MESSAGE(3, STK_BUFFER_NULLPTR);
-            ERRLOG("For some reason, the pointer to the buffer turned out to be NULL.%s", "");
-            PRINT_WHERE_FROM_CALLED
-
+            PRINT_ERROR_MESSAGE(3, STK_BUFFER_NULLPTR);
             stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-
-
-            PRINT_END_MESSAGE
-
-            //stkdtor(Stk, "", "", 0); TODO
-
-            abort();
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_WRONG_CPTY: //CAPACITY HAS WRONG VALUE
         {
-            PRINT_START_MESSAGE(4, STK_WRONG_CPTY);
-            ERRLOG("For some reason, stack buffer capacity has wrong value: " FAT "%zu" DEF ". In particular, it's larger than maximum size of stack buffer: " FAT"%zu" DEF".", Stk->cpty, STK_MXBFFRSZ);
-            PRINT_WHERE_FROM_CALLED
-
-            //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
-            //putc('\n', stderr);
-
-            //stkdtor(Stk, "", "", 0);
-            PRINT_END_MESSAGE
-
-            stkdtor(Stk, "", "", 0);
-
-            abort();
+            PRINT_ERROR_MESSAGE(4, STK_WRONG_CPTY);
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_WRONG_SZ: //SIZE HAS WRONG VALUE
         {
-            PRINT_START_MESSAGE(5, STK_WRONG_SZ);
-            ERRLOG("For some reason, size of filled stack buffer has wrong value: " FAT "%zu" DEF ". In particular, it's larger than current stack buffer capacity: " FAT"%zu" DEF".",
-                                                                                      Stk->sz,                                                                  Stk->cpty);
-            PRINT_WHERE_FROM_CALLED
-
-            //stkdmp(Stk, _prvfnc, _fl, _fnc, _nln);
-            //putc('\n', stderr);
-
-            //stkdtor(Stk, "", "", 0);
-            PRINT_END_MESSAGE
-
-            stkdtor(Stk, "", "", 0);
-
-            abort();
+            PRINT_ERROR_MESSAGE(5, STK_WRONG_SZ);
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_MALLOC_FAILED: //6: FAILED MALLOCATION
         {
-            PRINT_START_MESSAGE(6, STK_MALLOC_FAILED);
-            ERRLOG("For some reason, memory allocation in function " FAT"%s" DEF" failed.", _prvfnc);
-            PRINT_WHERE_FROM_CALLED
-
+            PRINT_ERROR_MESSAGE(6, STK_MALLOC_FAILED);
             stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-
-            PRINT_END_MESSAGE
-
-            stkdtor(Stk, "", "", 0);
-
-            abort();
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_BUFFER_UNDERFLOW: //STACKBUFFERUNDERFLOW
         {
-            PRINT_START_MESSAGE(7, STK_BUFFER_UNDERFLOW);
-            ERRLOG("Stack buffer underflow.%s", "");
-            PRINT_WHERE_FROM_CALLED
-            //putc('\n', stderr);
+            PRINT_ERROR_MESSAGE(7, STK_BUFFER_UNDERFLOW);
             stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-
-            PRINT_END_MESSAGE
-
-            stkdtor(Stk, "", "", 0);
-
-            abort();
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_DEFINED_CPTY_EXCESS:
         {
-            PRINT_START_MESSAGE(8, STK_DEFINED_CPTY_EXCESS);
-            ERRLOG("An attempt to create an array that is too large. Max stack buffer len: " FAT "%zu" DEF ". Given capacity: " FAT "%zu" DEF".",
-                                                                                                STK_MXBFFRSZ,                       Stk->cpty);
-            PRINT_WHERE_FROM_CALLED
-
-            PRINT_END_MESSAGE
-
-            stkdtor(Stk, _fl, _fnc, _nln);
-
-            abort();
+            PRINT_ERROR_MESSAGE(8, STK_DEFINED_CPTY_EXCESS);
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_WRONG_MXBFFRSZ_DEFINED:
         {
-            PRINT_START_MESSAGE(9, STK_WRONG_MXBFFRSZ_DEFINED);
-            ERRLOG("Bad attempt to define STK_MXBFFRSZ. STK_MXBFFRSZ defined as " FAT "%zu" DEF ", which is too large.",
-                                                                                        STK_MXBFFRSZ);
-
-            PRINT_END_MESSAGE
-
-            abort();
+            PRINT_ERROR_MESSAGE(9, STK_WRONG_MXBFFRSZ_DEFINED);
+            TOGGLE_ABORT;
             break;
         }
 
         case STK_POP_RECIEVER_NULLPTR:
         {
-            PRINT_START_MESSAGE(10, STK_POP_RECIEVER_NULLPTR);
-            ERRLOG("For some reason, NULL was passed as a pointer to the poped value reciever.%s", "");
-            PRINT_WHERE_FROM_CALLED
-
+            PRINT_ERROR_MESSAGE(10, STK_POP_RECIEVER_NULLPTR);
             stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
-            stkdtor(Stk, _fl, _fnc, _nln);
-
-            PRINT_END_MESSAGE
-
-            abort();
+            TOGGLE_ABORT;
             break;
         }
 
@@ -436,6 +391,18 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 #undef FRMT8
 #undef FRMT9
 #undef FRMT10
+#undef ERRMSG1
+#undef ERRMSG2
+#undef ERRMSG3
+#undef ERRMSG4
+#undef ERRMSG5
+#undef ERRMSG6
+#undef ERRMSG7
+#undef ERRMSG8
+#undef ERRMSG9
+#undef ERRMSG10
+
+#endif
 
 
 //-------------------------------------------------------------------------------------
@@ -539,6 +506,17 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
 
     STACK_OK
+
+    #ifdef STK_SANITIZE
+    Stk->_tp = "int";
+    Stk->_nm = _nm;
+    Stk->_brnfl = _fl;
+    Stk->_brnfnc = _fnc;
+    Stk->_brnln = _nln;
+
+
+    #endif
+
     //printf("read: %zu, head: %zu", STK_MXBFFRSZ, STK_HEAD_MXBFFRSZ);
     if (STK_MXBFFRSZ > STK_HEAD_MXBFFRSZ) {
 
@@ -559,15 +537,6 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     Stk->sz = 0;
 
-    //ifdef
-    Stk->_tp = "int";
-    Stk->_nm = _nm;
-    Stk->_brnfl = _fl;
-    Stk->_brnfnc = _fnc;
-    Stk->_brnln = _nln;
-    Stk->_logfl = stderr;
-    //Stk->_logfl = fopen("log.txt","w"); ////TODO: SDELAT DEFINOM ПЕРЕКЛЮЧЕНИЕ НА STDERR
-
     stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
 
@@ -576,7 +545,7 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
 
 //-------------------------------------------------------------------------------------
-int stkdtor(stack_t* Stk, str _fl, str _fnc, int _nln){
+int stkdtor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln){
 
     STACK_OK
 
@@ -584,11 +553,16 @@ int stkdtor(stack_t* Stk, str _fl, str _fnc, int _nln){
     Stk->cpty =  -1u;
     Stk->sz = -1u;
 
-    //ifdef
+    #ifdef STK_SANITIZE
     Stk->_brnfl = "DED_LOH";
     Stk->_brnfnc = "DED_LOH";
     Stk->_brnln = -1;
-    fclose(Stk->_logfl);
+
+    #ifndef STK_SANITIZE_LOUD
+    fclose(logfl);
+    #endif
+
+    #endif
 
     return 0;
 }
