@@ -134,8 +134,8 @@ FILE* logfl = fopen("log.log", "w");
 
 //-------------------------------------------------------------------------------------
 #define LOG(format, ...) fprintf(outfl, format, __VA_ARGS__);
-#define SEP fprintf(Stk->_logfl, "\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
-#define NLN putc('\n', Stk->_logfl);
+#define SEP fprintf(outfl, "\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+#define NLN putc('\n', outfl);
 #define IF_CALLEDFUNCTION_STKERRHND if (!strcmp(FNCNMS[2], _frmfnc))
 
 int stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
@@ -144,7 +144,7 @@ int stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 
     IF_CALLEDFUNCTION_STKERRHND {
 
-        outfl = Stk->_logfl;
+        outfl = logfl;
         SEP;
         LOG("Dump was called by error handler. %s", "");
     }
@@ -282,7 +282,13 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
 //-------------------------------------------------------------------------------------
 #ifdef STK_HANDLER_ABORT
-#define TOGGLE_ABORT abort()
+
+#ifdef STK_SANITIZE_LOUD
+#define TOGGLE_ABORT abort();
+#else
+#define TOGGLE_ABORT fclose(logfl); abort();
+#endif
+
 #else
 #define TOGGLE_ABORT (void) 0
 #endif
