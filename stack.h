@@ -27,3 +27,6 @@ int stkdtor(stack_t* Stk, str _nm, str _fl, str _frmfnc, int _nln);
 
 //-------------------------------------------------------------------------------------
 int stkpzn(stack_t* Stk, str _prvfnc, str _fl, str _frmfnc, int _nln);
+
+//-------------------------------------------------------------------------------------
+int stkhsh(void* ptr, size_t sz);

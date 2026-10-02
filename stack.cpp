@@ -48,12 +48,13 @@ struct stack_t {
     size_t cpty;
     size_t sz;
 
-
     str _tp;
     str _nm;
     str _brnfl;
     str _brnfnc;
     int _brnln;
+
+    int _strcthsh;
 };
 
 
@@ -69,7 +70,11 @@ enum _errt
     STK_BUFFER_UNDERFLOW         = 7,
     STK_DEFINED_CPTY_EXCESS      = 8,
     STK_WRONG_MXBFFRSZ_DEFINED   = 9,
-    STK_POP_RECIEVER_NULLPTR     = 10
+    STK_POP_RECIEVER_NULLPTR     = 10,
+
+    #ifndef STK_NOCHECK_STRUCT_HASH
+    STK_WRONG_STRUCT_HASH        = 11
+    #endif
 };
 
 #ifdef STK_SANITIZE_LOUD
@@ -124,6 +129,13 @@ FILE* logfl = fopen("log.log", "w");
                                                                                             \
         stkerrhnd(Stk, STK_WRONG_PREVFUNC_ACCESS,  __PRETTY_FUNCTION__, _fl, _fnc, _nln);   \
     }
+
+
+#ifndef STK_NOCHECK_STRUCT_HASH
+#define REWRITE_STRUCT_HASH_VAL Stk->_strcthsh = stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh));
+#else
+#define REWRITE_STRUCT_HASH_VAL (void) 0;
+#endif
 
 
 //-------------------------------------------------------------------------------------
@@ -193,41 +205,55 @@ int stkdmp(stack_t* Stk, str _frmfnc, str _fl, str _fnc, int _nln) {
 //-------------------------------------------------------------------------------------
 #define IS_FUNCTION_STKCDTOR !strcmp(FNCNMS[7], _prvfnc) || !strcmp(FNCNMS[8], _prvfnc)
 
+
+#ifndef STK_NOCHECK_STRUCT_HASH
+#define STRUCT_HASH_VAL_OK                                                                  \
+    if (Stk->_strcthsh != stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh))) {     \
+                                                                                            \
+        return 11;                                                                          \
+    }
+#else
+#define STRUCT_HASH_VAL_OK (void) 0
+#endif
+
+
 int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
-    PREVFUNC_ACCESS_OK
-
+    PREVFUNC_ACCESS_OK;
 
     if (Stk == NULL) {
 
-        return 2;
+        return STK_STRUCT_NULLPTR;
     }
 
 
     if (IS_FUNCTION_STKCDTOR) {
 
-        return 0;
+        return STK_OK;
     }
+
+
+    STRUCT_HASH_VAL_OK;
 
 
     if (Stk->cpty > STK_MXBFFRSZ) {
 
-        return 4; //WRONG CAPACITY //TODO сделать проверку на длину динамической памяти
+        return STK_WRONG_CPTY; //WRONG CAPACITY //TODO сделать проверку на длину динамической памяти
     }
 
     if (Stk->sz > Stk->cpty) {
 
-        return 5;
+        return STK_WRONG_SZ;
     }
 
     if (Stk->bffr == NULL) {
 
-        return 3;
+        return STK_BUFFER_NULLPTR;
     }
 
     //TODO КАНАРЕЙКИ И ХЭШИ
 
-    return 0;
+    return STK_OK;
 }
 
 
@@ -248,6 +274,9 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 #define FRMT8 "==========================================================="
 #define FRMT9 "====================================================="
 #define FRMT10 "===================================================="
+#ifndef STK_NOCHECK_STRUCT_HASH
+#define FRMT11 "====================================================="
+#endif
 //-------------------------------------------------------------------------------------
 #define ERRMSG1  ERRLOG("Function " FAT "%s" DEF" was called from function " FAT "%s" DEF ", that has no acces to сall.", _prvfnc, _fnc);
 #define ERRMSG2  ERRLOG("For some reason, NULL was passed as a pointer to the structure.%s", "");
@@ -262,6 +291,9 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 #define ERRMSG9  ERRLOG("Bad attempt to define STK_MXBFFRSZ. STK_MXBFFRSZ defined as " FAT "%zu" DEF ", which is too large.", \
                                                                             STK_MXBFFRSZ);
 #define ERRMSG10 ERRLOG("For some reason, NULL was passed as a pointer to the poped value reciever.%s", "");
+#ifndef STK_NOCHECK_STRUCT_HASH
+#define ERRMSG11 ERRLOG("For some reason, the structure hash changed the value, even though it shouldn't have.%s", "");
+#endif
 //-------------------------------------------------------------------------------------
 
 #define PRINT_WHERE_FROM_CALLED ERRLOG(" Error handler was called from function " FAT"%s" DEF". Last stack call was in " FAT"%s" DEF":" FAT"%d" DEF" in function " FAT"%s" DEF".\n", _prvfnc, _fl, _nln, _fnc);
@@ -373,6 +405,15 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
             break;
         }
 
+        #ifndef STK_NOCHECK_STRUCT_HASH
+        case STK_WRONG_STRUCT_HASH:
+        {
+            PRINT_ERROR_MESSAGE(11, STK_WRONG_STRUCT_HASH);
+            stkdmp(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+            TOGGLE_ABORT;
+            break;
+        }
+        #endif
 
         default: {}
     }
@@ -391,6 +432,9 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 #undef FRMT8
 #undef FRMT9
 #undef FRMT10
+#ifndef STK_NOCHECK_STRUCT_HASH
+#undef FRMT11
+#endif
 #undef ERRMSG1
 #undef ERRMSG2
 #undef ERRMSG3
@@ -401,6 +445,9 @@ void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln
 #undef ERRMSG8
 #undef ERRMSG9
 #undef ERRMSG10
+#ifndef STK_NOCHECK_STRUCT_HASH
+#undef ERRMSG11
+#endif
 
 #else
 void stkerrhnd(stack_t* Stk, _errt err, str _prvfnc, str _fl, str _fnc, int _nln) {}
@@ -420,14 +467,16 @@ int stkpush(stack_t* Stk, int var, str _fl, str _fnc, int _nln){
     *(Stk->bffr + Stk->sz) = var;
     Stk->sz ++;
 
-   return 0;
+    REWRITE_STRUCT_HASH_VAL;
+
+    return 0;
 }
 
 
 //-------------------------------------------------------------------------------------
 int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
 
-    STACK_OK
+    STACK_OK;
 
     if (var == NULL) {
 
@@ -444,6 +493,8 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
     Stk->sz --;
     *var = *(Stk->bffr + Stk->sz);
 
+    REWRITE_STRUCT_HASH_VAL;
+
     if (2 * Stk->sz < Stk->cpty && Stk->cpty > 5){
 
         stkshrnk(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
@@ -456,9 +507,9 @@ int stkpop(stack_t* Stk, int* var, str _fl, str _fnc, int _nln){
 //-------------------------------------------------------------------------------------
 int stkgrow(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
-    PREVFUNC_ACCESS_OK
+    PREVFUNC_ACCESS_OK;
 
-    STACK_OK
+    STACK_OK;
 
     stkelm_t* tmpbf = (stkelm_t*) realloc(Stk->bffr, 2 * (Stk->cpty) * sizeof((Stk->bffr)[0]));
     //tmpbf = NULL;
@@ -469,8 +520,9 @@ int stkgrow(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
     }
 
     Stk->bffr = tmpbf;
-
     Stk->cpty *= 2;
+
+    REWRITE_STRUCT_HASH_VAL;
 
     stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
@@ -497,6 +549,8 @@ int stkshrnk(stack_t *Stk, str _prvfnc, str _fl, str _fnc, int _nln){
 
     Stk->bffr = tmpbf;
     Stk->cpty /= 2;
+
+    REWRITE_STRUCT_HASH_VAL;
 
     return 0;
 }
@@ -532,12 +586,13 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     }
 
-    Stk->bffr = (stkelm_t*) calloc(defcpty, sizeof(int));
+    Stk->bffr = (stkelm_t*) calloc(defcpty, sizeof(stack_t));
 
     Stk->sz = 0;
 
-    stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
+    REWRITE_STRUCT_HASH_VAL;
 
+    stkpzn(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 
     return 0;
 }
@@ -556,6 +611,11 @@ int stkdtor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln){
     Stk->_brnfnc = "DED_LOH";
     Stk->_brnln = -1;
 
+
+    Stk->_strcthsh = 0;
+
+    REWRITE_STRUCT_HASH_VAL;
+
     #ifndef STK_SANITIZE_LOUD
     fclose(logfl);
     #endif
@@ -565,19 +625,36 @@ int stkdtor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln){
 
 
 //-------------------------------------------------------------------------------------
-int stkpzn(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln){
+int stkpzn(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
-    PREVFUNC_ACCESS_OK
+    PREVFUNC_ACCESS_OK;
 
-    STACK_OK
+    STACK_OK;
 
     for (size_t i = Stk->sz; i < Stk->cpty; i++){
 
         Stk->bffr [i] = PZN;
-    }
+        }
+
+    REWRITE_STRUCT_HASH_VAL;
 
     return 0;
+
 }
 
-
 #endif
+
+
+//-------------------------------------------------------------------------------------
+int stkhsh(void* ptr, size_t sz) {
+
+    int hsh = 0;
+
+    for (size_t i = 0; i < sz; i++){
+
+        //printf("%d\n", *((char*) ptr + i));
+        hsh += *((char*) ptr + i);
+    }
+
+    return hsh;
+}
