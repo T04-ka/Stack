@@ -36,7 +36,7 @@ str const FNCNMS[] = {
         "int stkgrow(stack_t*, str, str, str, int)",
         "int stkshrnk(stack_t*, str, str, str, int)",
         "int stkctor(stack_t*, str, str, str, int, size_t)",
-        "int stkdtor(stack_t*, str, str, int)",
+        "int stkdtor(stack_t*, str, str, str, int)",
         "int stkpzn(stack_t*, str, str, str, int)"
 };
 
@@ -84,7 +84,7 @@ enum _errt
 
     #ifdef STK_CHECK_BUFFER_HASH
     #ifndef STK_NOCHECK_STRUCT_HASH
-    , STK_WRONG_BUFFER_HASH        = 12
+    , STK_WRONG_BUFFER_HASH      = 12
     #else
     STK_WRONG_BUFFER_HASH        = 12
     #endif
@@ -279,11 +279,6 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 
         return STK_OK;
     }
-    fprintf(stderr, "with buf size = %lu, without = %lu\n", sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh), sizeof(*Stk) - sizeof(Stk->_strcthsh));
-    fprintf(stderr, "aaaa = %d\n", stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh)));
-    fprintf(stderr, "bbbb = %d\n", stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh)));
-    fprintf(stderr, "cccc = %d\n", Stk->_strcthsh);
-    fprintf(stderr, "written = %d, solved = %d\n", Stk->_strcthsh, stkhsh((void*) Stk, sizeof(*Stk) - sizeof(Stk->_strcthsh) - sizeof(Stk->_bffrhsh)));
 
     STRUCT_HASH_VAL_OK;
 
@@ -324,7 +319,7 @@ int stkvrf(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
 #define FRMT5 "==========================================================="
 #define FRMT6 "========================================================"
 #define FRMT7 "======================================================="
-#define FRMT8 "==========================================================="
+#define FRMT8 "====================================================="
 #define FRMT9 "====================================================="
 #define FRMT10 "===================================================="
 #ifndef STK_NOCHECK_STRUCT_HASH
@@ -639,7 +634,7 @@ int stkshrnk(stack_t *Stk, str _prvfnc, str _fl, str _fnc, int _nln){
 //-------------------------------------------------------------------------------------
 int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t defcpty){
 
-    $;
+    // $;
 
     STACK_OK
 
@@ -659,6 +654,8 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     Stk->cpty = defcpty;
 
+    //todo: не работает defcpty (-1u)
+
     if (defcpty > STK_MXBFFRSZ) {
 
         err = STK_DEFINED_CPTY_EXCESS;
@@ -666,7 +663,16 @@ int stkctor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln, const size_t def
 
     }
 
-    Stk->bffr = (stkelm_t*) calloc(defcpty, sizeof(stack_t));
+
+    stkelm_t* tmpbf = (stkelm_t*) calloc(defcpty, sizeof(stack_t));
+
+    if (tmpbf == NULL) {
+
+        err = 6;
+        ERROR_HANDLER_CALL
+    }
+
+    Stk->bffr = tmpbf;
 
     Stk->sz = 0;
 
@@ -706,9 +712,9 @@ int stkdtor(stack_t* Stk, str _nm, str _fl, str _fnc, int _nln){
 
 //-------------------------------------------------------------------------------------
 int stkpzn(stack_t* Stk, str _prvfnc, str _fl, str _fnc, int _nln) {
-$;
+// $;
     PREVFUNC_ACCESS_OK;
-$;
+//$;
     STACK_OK;
 
     for (size_t i = Stk->sz; i < Stk->cpty; i++){

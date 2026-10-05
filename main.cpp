@@ -1,10 +1,10 @@
 #define STK_SANITIZE
-#define STK_SANITIZE_LOUD
-#define STK_HANDLER_ABORT
+//#define STK_SANITIZE_LOUD
+//#define STK_HANDLER_ABORT
 //#define STK_NOCHECK_STRUCT_HASH
-#define STK_CHECK_BUFFER_HASH
+//#define STK_CHECK_BUFFER_HASH
 #include "stack.cpp"
-
+// SMART GIT
 // PIPE
 //-------------------------------------------------------------------------------------
 int main(){
@@ -13,7 +13,7 @@ int main(){
     stack_t* Stk = &Stk1;
 
 
-    STACK_CTOR(Stk1, 5);
+    STACK_CTOR(Stk1, 4);
 
     //Stk1.cpty = 0;
 
