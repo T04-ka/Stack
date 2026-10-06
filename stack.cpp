@@ -477,7 +477,7 @@ void stkerrhnd(stack_t* Stk, _errt err, str_t _prvfnc, str_t _fl, str_t _fnc, in
 #else
 void stkerrhnd(stack_t* Stk, _errt err, str_t _prvfnc, str_t _fl, str_t _fnc, int _nln) {}
 #endif
-
+//YASHADOLBAEB
 
 //-------------------------------------------------------------------------------------
 int stkpush(stack_t* Stk, int var, str_t _fl, str_t _fnc, int _nln){
