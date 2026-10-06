@@ -1,5 +1,6 @@
-#ifndef STACK_H
-#define STACK_H
+#include "stack.h"
+
+#include "./../../myformat.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -8,24 +9,11 @@
 #include <unistd.h>
 
 
-#define RED "\e[31m"
-#define BLUE "\e[34m"
-#define GREEN "\e[32m"
-#define YELLOW "\e[33m"
-#define FAT "\e[1m"
-#define DEF "\e[0m"
-
 #define STK_HEAD_MXBFFRSZ (SIZE_MAX / 8)
 #define MXSTKNM 100
 
 #ifndef STK_MXBFFRSZ
 #define STK_MXBFFRSZ STK_HEAD_MXBFFRSZ
-#endif
-
-typedef const char* str_t;
-
-#ifndef stkelm_t
-typedef int stkelm_t;
 #endif
 
 
@@ -46,50 +34,7 @@ const int NFNCS = 10;
 
 //TODO: СДЕЛАТЬ ПОД УСЛОВНУЮ КОМПИЛЯЦИЮ ПЕРЕДАЧУ ФУНКЦИЙ
 //TODO: СДЕЛАТЬ ОТКЛЮЧЕНИЕ ПЕРЕДАЧИ СЛУЖЕБНЫХ ПЕРЕЕННЫХ ПОД МАКРОСС
-struct stack_t {
-    stkelm_t* bffr;
-    size_t cpty;
-    size_t sz;
 
-    str_t _tp;
-    str_t _nm;
-    str_t _brnfl;
-    str_t _brnfnc;
-    int _brnln;
-
-    #ifndef STK_NOCHECK_STRUCT_HASH
-    int _strcthsh;
-    #endif
-
-    #ifdef STK_CHECK_BUFFER_HASH
-    int _bffrhsh;
-    #endif
-};
-
-
-enum _errt
-{
-    STK_OK                       = 0,
-    STK_WRONG_PREVFUNC_ACCESS    = 1,
-    STK_STRUCT_NULLPTR           = 2,
-    STK_BUFFER_NULLPTR           = 3,
-    STK_WRONG_CPTY               = 4,
-    STK_WRONG_SZ                 = 5,
-    STK_MALLOC_FAILED            = 6,
-    STK_BUFFER_UNDERFLOW         = 7,
-    STK_DEFINED_CPTY_EXCESS      = 8,
-    STK_WRONG_MXBFFRSZ_DEFINED   = 9,
-    STK_POP_RECIEVER_NULLPTR     = 10,
-    STK_DATA_NO_READ_ACCES       = 11,
-
-    #ifndef STK_NOCHECK_STRUCT_HASH
-    STK_WRONG_STRUCT_HASH        = 12,
-    #endif
-
-    #ifdef STK_CHECK_BUFFER_HASH
-    STK_WRONG_BUFFER_HASH        = 13,
-    #endif
-};
 
 #ifdef STK_SANITIZE_LOUD
 FILE* logfl = stderr;
@@ -101,34 +46,14 @@ FILE* logfl = fopen("log.log", "w");
 #include "stack.h"
 
 #ifdef STK_SANITIZE
-#define ONDEBUG(...) __VA_ARGS__
-#else
-#define ONDEBUG(...)
-#endif
-
-#define STACK_DUMP(STKPTR)           stkdmp(STKPTR, __PRETTY_FUNCTION__ ONDEBUG(, __FILE__, __PRETTY_FUNCTION__, __LINE__))
-#define STACK_CTOR(STKNM, ...)       stkctor(&STKNM, #STKNM, __FILE__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define STACK_PUSH(STKPTR, VAR)      stkpush(STKPTR, VAR, __FILE__, __PRETTY_FUNCTION__, __LINE__)
-#define STACK_POP(STKPTR, VARPTR)    stkpop(STKPTR, VARPTR, __FILE__, __PRETTY_FUNCTION__, __LINE__)
-#define STACK_DTOR(STKNM)            stkdtor(&STKNM, #STKNM, __FILE__, __PRETTY_FUNCTION__, __LINE__)
-
-#define $ fprintf(stderr, "ZZZ FROM %s:%d\n", __FILE__, __LINE__);
-
-#define $d(VR) fprintf(stderr, "%s = %d\n", #VR, (VR));
-#define $zu(VR) fprintf(stderr, "%s = %zu\n", #VR, (VR));
-
-#define PZN 69
-
-#ifdef STK_SANITIZE
 #define HANDLER_TOGGLE  stkerrhnd(Stk, (_errt) err, __PRETTY_FUNCTION__, _fl, _fnc, _nln);
 #else
 #define HANDLER_TOGGLE void(0)
 #endif
 
 //-------------------------------------------------------------------------------------
-
 #define STACK_OK                                                                                \
-    int err = stkvrf(Stk, __PRETTY_FUNCTION__, _fl, _fnc, _nln);                                \
+    int err = stkvrf(Stk, __PRETTY_FUNCTION__);                                                 \
     HANDLER_TOGGLE;                                                                             \
     if (err) return err;
 
@@ -274,7 +199,7 @@ int stkdmp(stack_t* Stk, str_t _frmfnc, str_t _fl, str_t _fnc, int _nln) {
 #endif
 
 
-int stkvrf(stack_t* Stk, str_t _prvfnc, str_t _fl, str_t _fnc, int _nln) {
+int stkvrf(stack_t* Stk, str_t _prvfnc) {
 
     //PREVFUNC_ACCESS_OK;
 
@@ -549,7 +474,6 @@ void stkerrhnd(stack_t* Stk, _errt err, str_t _prvfnc, str_t _fl, str_t _fnc, in
 #ifdef STK_CHECK_BUFFER_HASH
 #undef ERRMSG13
 #endif
-
 #else
 void stkerrhnd(stack_t* Stk, _errt err, str_t _prvfnc, str_t _fl, str_t _fnc, int _nln) {}
 #endif
@@ -759,8 +683,6 @@ int stkpzn(stack_t* Stk, str_t _prvfnc, str_t _fl, str_t _fnc, int _nln) {
     return 0;
 
 }
-
-#endif
 
 
 //-------------------------------------------------------------------------------------
